@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "model_abc"
+version = "0.1.0"
+description = "Model ABC"
+authors = ["Teja <teja@spraoi.ai>"]
+maintainers = [
+    "TBD <TBD@spraoi.ai>",
+]
+license = "MIT"
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+pandas = "~1.2"
+tensorflow = "~2.4"
+sklearn = "~0.0"
+inflection = "~0.5"
+joblib = "~1.0"
+tokenizers = "~0.10"
+
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
