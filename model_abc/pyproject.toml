@@ -15,9 +15,9 @@ classifiers = [
     "Programming Language :: Python :: Implementation :: CPython",
 ]
 packages = [
-    { include = "model_abc_code" }
+    { include = "model_abc" }
 ]
-include = ["data/*"]
+include = ["model_abc/data/*"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
