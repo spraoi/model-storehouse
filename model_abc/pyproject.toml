@@ -21,8 +21,8 @@ include = ["model_abc/data/*"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-pandas = "~1.2"
 tensorflow = "~2.4"
+pandas = "~1.2"
 sklearn = "~0.0"
 inflection = "~0.5"
 joblib = "~1.0"
