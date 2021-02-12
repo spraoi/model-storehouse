@@ -169,7 +169,7 @@ def predict(**kwargs):
 
     random.seed()
     predictions = [
-        {"entityId": x, "predictedResult": random.random()} for x in range(10)
+        {"entityId": x, "predictedResult": [(random.random(), r) for r in range(10)]} for x in range(10)
     ]
 
     return predictions
