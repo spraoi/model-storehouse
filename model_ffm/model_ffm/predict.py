@@ -1,5 +1,5 @@
 
-def predict(payload: dict, model_path: str, artifacts: list, parameters: dict):
+def predict(**kwargs):
 
     import numpy as np
     import tensorflow as tf
@@ -7,26 +7,183 @@ def predict(payload: dict, model_path: str, artifacts: list, parameters: dict):
     from inflection import humanize, underscore
     import joblib
     import logging
+    import pkg_resources
 
+    # Static Mappings for the Model
+    model_config = {
+            "MAX_SEQ_LEN": 16,
+            "PADDING": "pre",
+        "label_mapping": {
+            "entity_map": {
+                "Primary": 26,
+                "unk": 28,
+                "Spouse": 27,
+                "Child": 10,
+                "Dependent": 18,
+                "Beneficiary-1": 0,
+                "Beneficiary-2": 1,
+                "Beneficiary-3": 2,
+                "Employer": 25,
+                "CB-1": 5,
+                "CB-2": 6,
+                "Dependent-1": 19,
+                "Dependent-2": 20,
+                "Dependent-3": 21,
+                "Dependent-4": 22,
+                "Dependent-5": 23,
+                "Dependent-6": 24,
+                "Child-1": 11,
+                "Child-2": 12,
+                "Child-3": 13,
+                "Child-4": 14,
+                "Child-5": 15,
+                "Child-6": 16,
+                "Beneficiary-4": 3,
+                "Beneficiary-5": 4,
+                "CB-3": 7,
+                "CB-4": 8,
+                "CB-5": 9,
+                "Child-7": 17
+            },
+            "product_map": {
+                "unk": 29,
+                "LIFE": 15,
+                "ACCIB": 0,
+                "ADD": 2,
+                "ASOFEE": 6,
+                "STDATP": 23,
+                "HEALTH": 14,
+                "Dental": 11,
+                "CI": 7,
+                "CIW": 9,
+                "ADD LIFE": 3,
+                "LTD": 18,
+                "STD": 21,
+                "STDCORE": 25,
+                "ADDSUP1": 4,
+                "GF": 13,
+                "LIFSUP1": 17,
+                "LIFEVOL": 16,
+                "ADDVOL": 5,
+                "CIV": 8,
+                "COBRA": 10,
+                "VISB": 27,
+                "EAPFEE": 12,
+                "STDVOL": 26,
+                "LTDVOL": 20,
+                "STDBU": 24,
+                "VISV": 28,
+                "ACCIV": 1,
+                "STDASO ": 22,
+                "LTDBU": 19
+            },
+            "header_map": {
+                "NumWorkingHoursWeek": 49,
+                "DateOfBirth": 22,
+                "FirstName": 31,
+                "Gender": 33,
+                "LastName": 43,
+                "Salary": 61,
+                "AgeYears": 9,
+                "Premium": 53,
+                "GenericInd": 35,
+                "EligibilityInd": 27,
+                "EffectiveDate": 25,
+                "TerminationDate": 66,
+                "unk": 78,
+                "CoverageTier": 20,
+                "AccountNumber": 0,
+                "BenefitAmount": 11,
+                "Address": 2,
+                "AddressLine1": 3,
+                "BinaryResponse": 15,
+                "Carrier": 16,
+                "Action": 1,
+                "ProductPlanNameOrCode": 56,
+                "EmploymentStatus": 28,
+                "GenericDate": 34,
+                "Zip": 76,
+                "AddressLine2": 4,
+                "Country": 18,
+                "AddressLine3": 5,
+                "AdjustDeductAmt": 6,
+                "BenefitClass": 12,
+                "CoverageAmount": 19,
+                "CurrencySalary": 21,
+                "FullName": 32,
+                "BillingDivision": 14,
+                "PhoneNumber": 52,
+                "OrgName": 51,
+                "BenefitPercentage": 13,
+                "SSN": 60,
+                "MiddleInitial": 45,
+                "Relationship": 59,
+                "BeneficiaryType": 10,
+                "Product": 55,
+                "TimeFreq": 68,
+                "EligGroup": 26,
+                "Occupation": 50,
+                "NumDependents": 48,
+                "AgeDays": 7,
+                "InforceInd": 42,
+                "GuaranteeIssueInd": 37,
+                "PremiumFreq": 54,
+                "Provider": 57,
+                "WaiveReason": 74,
+                "USCity": 70,
+                "TerminationReasonCode": 67,
+                "CompanyCode": 17,
+                "GroupNumber": 36,
+                "IDNumber": 39,
+                "NotesOrDesc": 47,
+                "USCounty": 71,
+                "HireDate": 38,
+                "DriversLicense": 24,
+                "MiddleName": 46,
+                "USStateCode": 72,
+                "DisabilityInd": 23,
+                "TobaccoUserOrSmokerInd": 69,
+                "IDType": 40,
+                "SeqNumber": 64,
+                "emailAddress": 77,
+                "SalaryFreq": 63,
+                "TaxStatus": 65,
+                "Reason": 58,
+                "MaritalStatus": 44,
+                "SalaryEffectiveDate": 62,
+                "Units": 73,
+                "WorkLocation": 75,
+                "AgeGroup": 8,
+                "FLSAStatus": 29,
+                "FSAamount": 30,
+                "IdType": 41
+            }
+        }
+    }
 
-    MAX_LEN = parameters.get("model_config").get("MAX_SEQ_LEN")
-    pad = parameters.get("model_config").get("PADDING")
+    logging.info(f"{kwargs=}")
+    model_name = kwargs.get('model_name')
+    model_path = kwargs.get('model_path')
+    tokenizer_path = kwargs.get('tokenizer_path')
+
+    MAX_LEN = model_config.get("MAX_SEQ_LEN")
+    pad = model_config.get("PADDING")
 
     # load wordPiece tokenizer
-    tokenizer_path = artifacts[0]
-    bert_wp_loaded = joblib.load(tokenizer_path)
+    tokenizer = pkg_resources.resource_stream(model_name, tokenizer_path)
+    bert_wp_loaded = joblib.load(tokenizer)
     # load trained model
-    model_path = model_path
-    loaded_model = tf.keras.models.load_model(model_path)
+    # model = pkg_resources.resource_stream(model_name, model_path)
+    loaded_model = tf.keras.models.load_model(model_path) # need to pass in a filepath string to load_model
 
     # load categories:index mappings
-    inv_prod_dict = parameters.get("label_mapping").get("product_map")
+    inv_prod_dict = model_config.get("label_mapping").get("product_map")
     prod_dict = {v: k for k, v in inv_prod_dict.items()}
 
-    inv_head_dict = parameters.get("label_mapping").get("header_map")
+    inv_head_dict = model_config.get("label_mapping").get("header_map")
     head_dict = {v: k for k, v in inv_head_dict.items()}
 
-    inv_party_dict = parameters.get("label_mapping").get("entity_map")
+    inv_party_dict = model_config.get("label_mapping").get("entity_map")
     party_dict = {v: k for k, v in inv_party_dict.items()}
 
     all_columns = payload.get("batch_data")
@@ -86,8 +243,4 @@ def predict(payload: dict, model_path: str, artifacts: list, parameters: dict):
 #     "Child 2 DOB",
 #     "Ch1.LastName",
 #     "ACC Effective Date"]}
-#
-# with open("data/MLM_config.json") as json_file:
-#     import json
-#     config = json.load(json_file)
-#     print(predict(payload, "data/lstm_tuned_nov27.h5",["data/bert_wp_tok_updated.joblib"],config))
+# print(predict(model_name="model_ffm",tokenizer_path="data/bert_wp_tok_updated.joblib",model_path="data/lstm_tuned_nov27.h5"))
