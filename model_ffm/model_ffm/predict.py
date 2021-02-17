@@ -173,8 +173,8 @@ def predict(**kwargs):
     tokenizer = pkg_resources.resource_stream(model_name, tokenizer_path)
     bert_wp_loaded = joblib.load(tokenizer)
     # load trained model
-    # model = pkg_resources.resource_stream(model_name, model_path)
-    loaded_model = tf.keras.models.load_model(model_path) # need to pass in a filepath string to load_model
+    fp = pkg_resources.resource_filename(model_name, model_path)
+    loaded_model = tf.keras.models.load_model(fp)
 
     # load categories:index mappings
     inv_prod_dict = model_config.get("label_mapping").get("product_map")
