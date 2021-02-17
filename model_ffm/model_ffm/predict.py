@@ -164,7 +164,7 @@ def predict(**kwargs):
     logging.info(f"{kwargs=}")
     model_name = kwargs.get('model_name')
     model_path = kwargs.get('model_path')
-    tokenizer_path = kwargs.get('tokenizer_path')
+    tokenizer_path = kwargs.get('artifacts')[0]
 
     MAX_LEN = model_config.get("MAX_SEQ_LEN")
     pad = model_config.get("PADDING")
@@ -186,7 +186,7 @@ def predict(**kwargs):
     inv_party_dict = model_config.get("label_mapping").get("entity_map")
     party_dict = {v: k for k, v in inv_party_dict.items()}
 
-    all_columns = payload.get("batch_data")
+    all_columns = kwargs.get("inputs").get("batch_data")
     if not all_columns:
         print("no input data !")
     token_ids_test = []
@@ -243,4 +243,4 @@ def predict(**kwargs):
 #     "Child 2 DOB",
 #     "Ch1.LastName",
 #     "ACC Effective Date"]}
-# print(predict(model_name="model_ffm",tokenizer_path="data/bert_wp_tok_updated.joblib",model_path="data/lstm_tuned_nov27.h5"))
+# print(predict(model_name="model_ffm",artifacts=["data/bert_wp_tok_updated.joblib"],model_path="data/lstm_tuned_nov27.h5",inputs=payload))
