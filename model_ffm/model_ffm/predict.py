@@ -1,4 +1,3 @@
-
 def predict(**kwargs):
 
     import numpy as np
@@ -6,13 +5,12 @@ def predict(**kwargs):
     from tensorflow.keras.preprocessing.sequence import pad_sequences
     from inflection import humanize, underscore
     import joblib
-    import logging
     import pkg_resources
 
     # Static Mappings for the Model
     model_config = {
-            "MAX_SEQ_LEN": 16,
-            "PADDING": "pre",
+        "MAX_SEQ_LEN": 16,
+        "PADDING": "pre",
         "label_mapping": {
             "entity_map": {
                 "Primary": 26,
@@ -43,7 +41,7 @@ def predict(**kwargs):
                 "CB-3": 7,
                 "CB-4": 8,
                 "CB-5": 9,
-                "Child-7": 17
+                "Child-7": 17,
             },
             "product_map": {
                 "unk": 29,
@@ -75,7 +73,7 @@ def predict(**kwargs):
                 "VISV": 28,
                 "ACCIV": 1,
                 "STDASO ": 22,
-                "LTDBU": 19
+                "LTDBU": 19,
             },
             "header_map": {
                 "NumWorkingHoursWeek": 49,
@@ -156,24 +154,20 @@ def predict(**kwargs):
                 "AgeGroup": 8,
                 "FLSAStatus": 29,
                 "FSAamount": 30,
-                "IdType": 41
-            }
-        }
+                "IdType": 41,
+            },
+        },
     }
 
-    logging.info(f"{kwargs=}")
-    model_name = kwargs.get('model_name')
-    model_path = kwargs.get('model_path')
-    tokenizer_path = kwargs.get('artifacts')[0]
-
-    MAX_LEN = model_config.get("MAX_SEQ_LEN")
+    max_seq_len = model_config.get("MAX_SEQ_LEN")
     pad = model_config.get("PADDING")
 
     # load wordPiece tokenizer
-    tokenizer = pkg_resources.resource_stream(model_name, tokenizer_path)
+    tokenizer = pkg_resources.resource_stream("model_ffm", "data/bert_wp_tok_updated.joblib")
     bert_wp_loaded = joblib.load(tokenizer)
+
     # load trained model
-    fp = pkg_resources.resource_filename(model_name, model_path)
+    fp = pkg_resources.resource_filename("model_ffm", "data/lstm_tuned_nov27.h5")
     loaded_model = tf.keras.models.load_model(fp)
 
     # load categories:index mappings
@@ -186,9 +180,8 @@ def predict(**kwargs):
     inv_party_dict = model_config.get("label_mapping").get("entity_map")
     party_dict = {v: k for k, v in inv_party_dict.items()}
 
-    all_columns = kwargs.get("inputs").get("batch_data")
-    if not all_columns:
-        print("no input data !")
+    all_columns = kwargs.get("inputs").get("columns")
+
     token_ids_test = []
     processed_cols = []
     for column in all_columns:
@@ -196,47 +189,50 @@ def predict(**kwargs):
         processed_cols.append(column)
         token_ids_test.append(bert_wp_loaded.encode(column).ids)
 
-    test_tokens = pad_sequences(token_ids_test,
-                                padding=pad,
-                                value=bert_wp_loaded.get_vocab()['[PAD]'],
-                                maxlen=MAX_LEN)
+    test_tokens = pad_sequences(
+        token_ids_test,
+        padding=pad,
+        value=bert_wp_loaded.get_vocab()["[PAD]"],
+        maxlen=max_seq_len,
+    )
 
-    preds_test = loaded_model.predict(test_tokens)
+    predictions_test = loaded_model.predict(test_tokens)
 
-    p1_test = np.argmax(preds_test[0], axis=1)
-    p2_test = np.argmax(preds_test[1], axis=1)
-    p3_test = np.argmax(preds_test[2], axis=1)
+    p1_test = np.argmax(predictions_test[0], axis=1)
+    p2_test = np.argmax(predictions_test[1], axis=1)
+    p3_test = np.argmax(predictions_test[2], axis=1)
 
     prod_label = np.array([prod_dict[x] for x in p1_test]).reshape((-1, 1))
     header_label = np.array([head_dict[x] for x in p2_test]).reshape((-1, 1))
     entity_label = np.array([party_dict[x] for x in p3_test]).reshape((-1, 1))
 
-    prob_1 = tf.nn.softmax(preds_test[0], axis=1)
-    prob_2 = tf.nn.softmax(preds_test[1], axis=1)
-    prob_3 = tf.nn.softmax(preds_test[2], axis=1)
+    prob_1 = tf.nn.softmax(predictions_test[0], axis=1)
+    prob_2 = tf.nn.softmax(predictions_test[1], axis=1)
+    prob_3 = tf.nn.softmax(predictions_test[2], axis=1)
 
-    prod_confidence = np.array([round(float(x), 4) for x in list(np.max(prob_1, axis=1))]).reshape((-1, 1))
-    header_confidence = np.array([round(float(x), 4) for x in list(np.max(prob_2, axis=1))]).reshape((-1, 1))
-    entity_confidence = np.array([round(float(x), 4) for x in list(np.max(prob_3, axis=1))]).reshape((-1, 1))
+    prod_confidence = np.array(
+        [round(float(x), 4) for x in list(np.max(prob_1, axis=1))]
+    ).reshape((-1, 1))
+    header_confidence = np.array(
+        [round(float(x), 4) for x in list(np.max(prob_2, axis=1))]
+    ).reshape((-1, 1))
+    entity_confidence = np.array(
+        [round(float(x), 4) for x in list(np.max(prob_3, axis=1))]
+    ).reshape((-1, 1))
 
-    pred_labels = np.hstack((prod_label,
-                             header_label, entity_label)).tolist()
-    confidences = np.hstack((prod_confidence, header_confidence,
-                             entity_confidence)).tolist()
+    pred_labels = np.hstack((prod_label, header_label, entity_label)).tolist()
+    confidences = np.hstack(
+        (prod_confidence, header_confidence, entity_confidence)
+    ).tolist()
 
     res = []
     for x, y in zip(pred_labels, confidences):
         res.append([(a, b) for a, b in zip(x, y)])
 
-    predictions = []
-    for entity, prediction in zip(all_columns, res):
-        predictions.append({"entityId": entity, "predictedResult": prediction})
+    return [{"entityId": entity, "predictedResult": prediction}for entity, prediction in zip(all_columns, res)]
 
 
-    return predictions
-
-
-#to be deleted..eventually
+# to be deleted..eventually
 
 # payload = {"batch_data": ["Dependent CHILD #3 SSN",
 #     "Child#1 DOB",
