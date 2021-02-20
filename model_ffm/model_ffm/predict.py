@@ -180,7 +180,7 @@ def predict(**kwargs):
     inv_party_dict = model_config.get("label_mapping").get("entity_map")
     party_dict = {v: k for k, v in inv_party_dict.items()}
 
-    all_columns = kwargs.get("inputs").get("batch_data")
+    all_columns = kwargs.get("inputs").get("columns")
 
     token_ids_test = []
     processed_cols = []
