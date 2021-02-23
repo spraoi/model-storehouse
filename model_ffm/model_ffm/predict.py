@@ -229,14 +229,14 @@ def predict(**kwargs):
         res.append([(a, b) for a, b in zip(x, y)])
 
     pred_list = [{entity:prediction} for entity, prediction in zip(all_columns, res)]
-    return [{"entityId":kwargs.get("dataset_id"),"predictedResult":pred_list}]
+    return [{"entityId":kwargs.get("inputs").get("datasetId"),"predictedResult":pred_list}]
 
 
 # to be deleted..eventually
 
-# payload = {"columns": ["Dependent CHILD #3 SSN",
+# columns= ["Dependent CHILD #3 SSN",
 #     "Child#1 DOB",
 #     "Child 2 DOB",
 #     "Ch1.LastName",
-#     "ACC Effective Date"]}
-# print(predict(dataset_id="spr:dataset_id",model_name="model_ffm",artifacts=["data/bert_wp_tok_updated_v2.joblib"],model_path="data/FFM_new_prod_labels_v2.h5",inputs=payload))
+#     "ACC Effective Date"]
+# print(predict(model_name="model_ffm",artifacts=["data/bert_wp_tok_updated_v2.joblib"],model_path="data/FFM_new_prod_labels_v2.h5",inputs={"datasetId":"spr:dataset_id","columns":columns}))
