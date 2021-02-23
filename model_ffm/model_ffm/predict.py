@@ -162,11 +162,11 @@ def predict(**kwargs):
     pad = model_config.get("PADDING")
 
     # load wordPiece tokenizer
-    tokenizer = pkg_resources.resource_stream("model_ffm", "data/bert_wp_tok_updated.joblib")
+    tokenizer = pkg_resources.resource_stream("model_ffm", "data/bert_wp_tok_updated_v2.joblib")
     bert_wp_loaded = joblib.load(tokenizer)
 
     # load trained model
-    fp = pkg_resources.resource_filename("model_ffm", "data/FFM_new_prod_labels.h5")
+    fp = pkg_resources.resource_filename("model_ffm", "data/FFM_new_prod_labels_v2.h5")
     loaded_model = tf.keras.models.load_model(fp)
 
     # load categories:index mappings
@@ -238,4 +238,4 @@ def predict(**kwargs):
 #     "Child 2 DOB",
 #     "Ch1.LastName",
 #     "ACC Effective Date"]}
-# print(predict(model_name="model_ffm",artifacts=["data/bert_wp_tok_updated.joblib"],model_path="data/FFM_new_prod_labels.h5",inputs=payload))
+# print(predict(model_name="model_ffm",artifacts=["data/bert_wp_tok_updated_v2.joblib"],model_path="data/FFM_new_prod_labels_v2.h5",inputs=payload))
