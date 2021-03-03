@@ -229,7 +229,7 @@ def predict(**kwargs):
         res.append([(a, b) for a, b in zip(x, y)])
 
     pred_list = [{entity:prediction} for entity, prediction in zip(all_columns, res)]
-    return [{"entityId":kwargs.get("inputs").get("datasetId"),"predictedResult":pred_list}]
+    return [{"inputDataSource":f"{kwargs.get('inputs').get('datasetId')}:0","entityId":kwargs.get("inputs").get("datasetId"),"predictedResult":pred_list}]
 
 
 # to be deleted..eventually
