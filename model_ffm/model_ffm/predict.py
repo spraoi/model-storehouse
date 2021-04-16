@@ -226,7 +226,7 @@ def predict(**kwargs):
 
     res = []
     for x, y in zip(pred_labels, confidences):
-        res.append([(a, b) for a, b in zip(x, y)])
+        res.append([{"predictedLabel":a,"confidence":b} for a, b in zip(x, y)])
 
     pred_list = [{entity:prediction} for entity, prediction in zip(all_columns, res)]
     return [{"inputDataSource":f"{kwargs.get('inputs').get('datasetId')}:0","entityId":kwargs.get("inputs").get("datasetId"),"predictedResult":pred_list}]
