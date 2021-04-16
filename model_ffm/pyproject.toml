@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "model_ffm"
-version = "0.1.4"
-description = "Model ABC"
+version = "0.1.5"
+description = "Model FFM"
 authors = ["Teja <teja@spraoi.ai>"]
 maintainers = [
     "TBD <TBD@spraoi.ai>",
