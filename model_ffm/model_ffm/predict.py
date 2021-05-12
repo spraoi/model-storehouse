@@ -14,7 +14,7 @@ def predict(**kwargs):
         "label_mapping": {
         "entity_map": {
             "Primary": 26,
-            "unk": 28,
+            "UNK": 28,
             "Spouse": 27,
             "Child": 10,
             "Dependent": 18,
@@ -88,7 +88,7 @@ def predict(**kwargs):
             "EligibilityInd": 27,
             "EffectiveDate": 25,
             "TerminationDate": 65,
-            "unk": 77,
+            "UNK": 77,
             "CoverageTier": 20,
             "AccountNumber": 0,
             "BenefitAmount": 11,
