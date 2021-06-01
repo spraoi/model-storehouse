@@ -241,11 +241,11 @@ def predict(**kwargs):
 
 # to be deleted..eventually
 
-columns= ["Dependent CHILD #3 SSN",
-    "Child#1 DOB",
-    "Child 2 DOB",
-    "Ch1.LastName",
-    "ACC Effective Date",
-    "blank_header_1",
-    "blank_header_20"]
-print(predict(model_name="model_ffm",artifacts=["data/bert_wp_tok_updated_v2.joblib"],model_path="data/FFM_new_prod_labels_v2.h5",inputs={"datasetId":"spr:dataset_id","columns":columns}))
+# columns= ["Dependent CHILD #3 SSN",
+#     "Child#1 DOB",
+#     "Child 2 DOB",
+#     "Ch1.LastName",
+#     "ACC Effective Date",
+#     "blank_header_1",
+#     "blank_header_20"]
+# print(predict(model_name="model_ffm",artifacts=["data/bert_wp_tok_updated_v2.joblib"],model_path="data/FFM_new_prod_labels_v2.h5",inputs={"datasetId":"spr:dataset_id","columns":columns}))
