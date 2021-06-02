@@ -8,6 +8,10 @@ def predict(**kwargs):
     import pkg_resources
     import re
 
+    if not kwargs.get("inputs").get("columns"):
+        return [{"inputDataSource": f"{kwargs.get('inputs').get('datasetId')}:0",
+                 "entityId": kwargs.get("inputs").get("datasetId"), "predictedResult": []}]
+
     # Static Mappings for the Model
     model_config = {
         "MAX_SEQ_LEN": 16,
@@ -248,4 +252,5 @@ def predict(**kwargs):
 #     "ACC Effective Date",
 #     "blank_header_1",
 #     "blank_header_20"]
+# columns = []
 # print(predict(model_name="model_ffm",artifacts=["data/bert_wp_tok_updated_v2.joblib"],model_path="data/FFM_new_prod_labels_v2.h5",inputs={"datasetId":"spr:dataset_id","columns":columns}))
