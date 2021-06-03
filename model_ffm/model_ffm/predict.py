@@ -6,6 +6,11 @@ def predict(**kwargs):
     from inflection import humanize, underscore
     import joblib
     import pkg_resources
+    import re
+
+    if not kwargs.get("inputs").get("columns"):
+        return [{"inputDataSource": f"{kwargs.get('inputs').get('datasetId')}:0",
+                 "entityId": kwargs.get("inputs").get("datasetId"), "predictedResult": []}]
 
     # Static Mappings for the Model
     model_config = {
@@ -229,6 +234,12 @@ def predict(**kwargs):
         res.append([(a, b) for a, b in zip(x, y)])
 
     pred_list = [{entity:prediction} for entity, prediction in zip(all_columns, res)]
+    pattern = re.compile("^blank_header_\d+$")
+    for item in pred_list:
+        for header, pred in item.items():
+            if pattern.match(header):
+                item[header] = [('UNK',1.0),('UNK',1.0),('UNK',1.0)]
+
     return [{"inputDataSource":f"{kwargs.get('inputs').get('datasetId')}:0","entityId":kwargs.get("inputs").get("datasetId"),"predictedResult":pred_list}]
 
 
@@ -238,5 +249,8 @@ def predict(**kwargs):
 #     "Child#1 DOB",
 #     "Child 2 DOB",
 #     "Ch1.LastName",
-#     "ACC Effective Date"]
+#     "ACC Effective Date",
+#     "blank_header_1",
+#     "blank_header_20"]
+# columns = []
 # print(predict(model_name="model_ffm",artifacts=["data/bert_wp_tok_updated_v2.joblib"],model_path="data/FFM_new_prod_labels_v2.h5",inputs={"datasetId":"spr:dataset_id","columns":columns}))
