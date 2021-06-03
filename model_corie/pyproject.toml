@@ -25,6 +25,9 @@ pandas = "~1.2"
 numpy = "~1.18"
 joblib = "~0.14"
 shap = "~0.39"
+boto3 = "~1.17"
+fsspec = "~2021.5"
+s3fs = "~2021.5"
 
 [build-system]
 requires = ["poetry>=0.12"]

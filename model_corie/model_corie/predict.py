@@ -9,6 +9,16 @@ def predict(**kwargs):
     # from model_corie.model_resources.helpers import fetch_artifact_key
     # from model_corie.model_resources.helpers import extract_top_drivers
     from utils import extract_top_drivers
+    import boto3
+
+    def download_obj_from_s3(bucket_name, key, local_file_name):
+        bucket = boto3.resource('s3').Bucket(bucket_name)
+        with open(local_file_name, 'wb') as file_data:
+            bucket.download_fileobj(key, file_data)
+        file_data.close()
+        loaded_model = joblib.load(local_file_name)
+
+        return loaded_model
 
     # config
     # s3_model_bucket = 'spr-ml-artifacts'
@@ -32,13 +42,17 @@ def predict(**kwargs):
 # using new ml-model-service
 #     xgb_key = fetch_artifact_key(host, modelId, version_number, "model_key")
 #     xgb_model = download_obj_from_s3(s3_model_bucket, xgb_key, "xgb_model.joblib")
-    xgb_model_stream = pkg_resources.resource_stream("model_corie",
-                                                     f"data/{model_file}")
-    xgb_model = joblib.load(xgb_model_stream)
 
-    template_fp = pkg_resources.resource_filename("model_corie",
-                                                  f"data/{template_file}")
-    template_data = pd.read_csv(template_fp)
+    #change
+    # xgb_model_stream = pkg_resources.resource_stream("model_corie",
+    #                                                  f"data/{model_file}")
+    # xgb_model = joblib.load(xgb_model_stream)
+    #new
+    xgb_model = download_obj_from_s3("spr-ml-artifacts","local/corie_model.joblib","data/coriemodel.joblib")
+
+    # template_fp = pkg_resources.resource_filename("model_corie",
+    #                                               f"data/{template_file}")
+    template_data = pd.read_csv("s3://spr-ml-artifacts/local/corie_template.csv")
     features = template_data.columns.values
 
     testX_fp = pkg_resources.resource_filename("model_corie",
@@ -117,4 +131,7 @@ def predict(**kwargs):
     return final_complete_df
 
 
-print(predict(nrows=10).head())
+
+
+
+print(predict(nrows=10).to_dict(orient="records"))
