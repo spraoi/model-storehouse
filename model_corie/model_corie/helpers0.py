@@ -1,7 +1,7 @@
-from typing import List, Tuple, Dict
-import json
-
-
+# from typing import List, Tuple, Dict
+# import json
+#
+#
 # import dask.dataframe as dd
 # from dask.distributed import LocalCluster
 # from dask.distributed import Client, Security
@@ -9,9 +9,7 @@ import json
 # # from boogie.workers.bagloader import BagLoader
 # # from boogie.models import FileFormat
 # # from boogie.models import S3Path
-
-# import boto3
-# import joblib
+#
 #
 # def get_model_info(mv_data_url: str, client_id: str, user_id):
 #
@@ -108,13 +106,3 @@ import json
 #     bag = BagLoader().load_bag(dataset=ds)
 #     ddf = bag.to_dataframe()
 #     return ddf
-
-# def download_obj_from_s3(bucket_name, key, local_file_name):
-#
-#     bucket = boto3.resource('s3').Bucket(bucket_name)
-#     with open(local_file_name, 'wb') as file_data:
-#         bucket.download_fileobj(key, file_data)
-#     file_data.close()
-#     loaded_model = joblib.load(local_file_name)
-#
-#     return loaded_model
