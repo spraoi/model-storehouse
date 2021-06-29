@@ -2,21 +2,22 @@ import boto3
 import joblib
 import pandas as pd
 import numpy as np
+import tempfile
 
 
 
 def download_obj_from_s3(bucket_name, key, local_file_name):
-
     bucket = boto3.resource("s3").Bucket(bucket_name)
-    with open(local_file_name, "wb") as file_data:
+    temp_file = f"{tempfile.mkdtemp()}/{local_file_name}"
+    with open(temp_file, "wb") as file_data:
         bucket.download_fileobj(key, file_data)
     file_data.close()
-    loaded_model = joblib.load(local_file_name)
+    loaded_model = joblib.load(temp_file)
 
     return loaded_model
 
 def magnificent_map(df, remap_columns):
-    pd_cat = [
+    PD_CAT = [
         "UNKNOWN",
         "ILL-DEFINED CONDITIONS",
         "CONGENITAL ANOMALIES",
@@ -26,69 +27,10 @@ def magnificent_map(df, remap_columns):
         "NERVOUS SYSTEM & SENSE ORGANS",
         "MENTAL & NERVOUS DISORDERS",
     ]
-    sic_high = [
-        7371,
-        6321,
-        3548,
-        3444,
-        2731,
-        7514,
-        5063,
-        2297,
-        3751,
-        8231,
-        9531,
-        3586,
-        3823,
-        3672,
-        3271,
-        2865,
-        2399,
-        7819,
-        2841,
-        4011,
-        3561,
-        3363,
-        3629,
-        8999,
-        3366,
-    ]
-    sic_med = [
-        3841,
-        6371,
-        3549,
-        5722,
-        8222,
-        4522,
-        4111,
-        8631,
-        5122,
-        2022,
-        1623,
-        5141,
-        5641,
-        3496,
-        3731,
-        3674,
-        6411,
-        6153,
-        2821,
-        1521,
-        5944,
-        3545,
-        8621,
-        5099,
-        5015,
-        9224,
-        5072,
-        8042,
-        5311,
-    ]
-
-    sic_high = [str(x) for x in sic_high]
-    sic_med = [str(x) for x in sic_med]
-    cov_core = ["STD", "STDCORE", "STDBU", "STD1"]
-    cov_vol = ["STDVOL", "VS1", "VS2"]
+    SIC_HIGH = ['7371', '6321', '3548', '3444', '2731', '7514', '5063', '2297', '3751', '8231', '9531', '3586', '3823', '3672', '3271', '2865', '2399', '7819', '2841', '4011', '3561', '3363', '3629', '8999', '3366']
+    SIC_MED = ['3841', '6371', '3549', '5722', '8222', '4522', '4111', '8631', '5122', '2022', '1623', '5141', '5641', '3496', '3731', '3674', '6411', '6153', '2821', '1521', '5944', '3545', '8621', '5099', '5015', '9224', '5072', '8042', '5311']
+    COV_CORE = ["STD", "STDCORE", "STDBU", "STD1"]
+    COV_VOL = ["STDVOL", "VS1", "VS2"]
 
     for col in remap_columns:
 
@@ -114,18 +56,18 @@ def magnificent_map(df, remap_columns):
             df.loc[
                 df[col].str.startswith("CONGENITAL MALFORMATIONS, DEFORMATIONS"), col
             ] = "CONGENITAL ANOMALIES"
-            df.loc[~df[col].isin(pd_cat), col] = "OTHERS"
+            df.loc[~df[col].isin(PD_CAT), col] = "OTHERS"
         elif col == "SIC Code":
             #             df.loc[:, col] = pd.to_numeric(df.loc[:, col]).fillna(-99).astype(
             #                 int)  #to avoid float strings!
             df.loc[:, "SIC_risk_ind"] = (
-                df.loc[:, col].replace(sic_high, "High").replace(sic_med, "Medium")
+                df.loc[:, col].replace(SIC_HIGH, "High").replace(SIC_MED, "Medium")
             )
             df.loc[~df["SIC_risk_ind"].isin(["High", "Medium"]), "SIC_risk_ind"] = "Low"
 
         elif col == "Coverage Code":
             df.loc[:, col] = (
-                df.loc[:, col].replace(cov_core, "STDCORE").replace(cov_vol, "STDVOL")
+                df.loc[:, col].replace(COV_CORE, "STDCORE").replace(COV_VOL, "STDVOL")
             )
             df.loc[~df[col].isin(["STDCORE", "STDVOL"]), col] = "OTHERS"
 
@@ -154,10 +96,7 @@ def get_date_diff(col1, col2, interval):
     difference between dates specified by the interval in ['Y','D','M']
     col1 and col2 are date colummns and col2 > col1
     """
-    diff = col2 - col1
-    diff /= np.timedelta64(1, interval)
-
-    return diff
+    return (col2 - col1) / np.timedelta64(1, interval)
 
 
 def add_policy_tenure_to_df(df):
