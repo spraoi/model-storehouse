@@ -4,7 +4,9 @@ import pandas as pd
 import numpy as np
 import tempfile
 
-
+def get_bucket_and_key_from_s3_uri(uri):
+    bucket, key = uri.split('/',2)[-1].split('/',1)
+    return bucket, key
 
 def download_obj_from_s3(bucket_name, key, local_file_name):
     bucket = boto3.resource("s3").Bucket(bucket_name)

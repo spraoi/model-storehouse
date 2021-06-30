@@ -13,12 +13,13 @@ def predict(**kwargs):
         test_train_match,
         get_na_rows,
         posterior_correction,
-        download_obj_from_s3
+        download_obj_from_s3,
+        get_bucket_and_key_from_s3_uri
     )
     import json
 
 
-    p1_orig = 0.0159  # 1: 462/ 0: 28513
+    p1_orig = 0.00795
     p_1_train = 0.1792  # 1: {0: 24995, 1: 5458}
 
     columns = [
@@ -37,7 +38,6 @@ def predict(**kwargs):
         "Coverage Code",
         "Policy Termination Date",
         "Policy Effective Date",
-        "SS Adjustment Ind",
         "Insured Annualized Salary",
         "Policy Lives",
     ]
@@ -55,17 +55,16 @@ def predict(**kwargs):
         "Insured Gender",
         "Insured Salary Ind",
         "Primary Diagnosis Category",
-        "SS Adjustment Ind",
         "SIC_risk_ind",
         "Coverage Code",
     ]
 
-    s3_model_bucket = kwargs.get("s3_bucket")
     artifacts = kwargs.get("artifacts")
 
-    loaded_model = download_obj_from_s3(s3_model_bucket, artifacts.get("model"),"model.joblib")
+    model_bucket, model_key = get_bucket_and_key_from_s3_uri(artifacts.get("model"))
+    loaded_model = download_obj_from_s3(model_bucket, model_key,"model.joblib")
 
-    loaded_template = pd.read_csv(f"s3://{s3_model_bucket}/{artifacts.get('template')}")
+    loaded_template = pd.read_csv(artifacts.get('template'))
 
     magnificent_data = pd.DataFrame([kwargs.get("inputs").get("claim")])
     test_data = magnificent_data[columns].copy()
@@ -97,7 +96,6 @@ def predict(**kwargs):
         test_data, columns=test_data.select_dtypes(include="category").columns
     )
     test_X = test_train_match(loaded_template, test_data)
-
     predict_prob = loaded_model.predict_proba(
         test_X.loc[[na_ind == "N" for na_ind in na_inds], :]
     )[:, 1]
@@ -133,7 +131,7 @@ def predict(**kwargs):
 
 #example input
 
-# print(predict(model_name="model_std",s3_bucket="spr-ml-artifacts",artifacts={"model":"prod/MLMR_STD_Fraud_Model/artifacts/model_2021-06-14.joblib","template":"prod/MLMR_STD_Fraud_Model/artifacts/template_data_2021-06-14.csv"},inputs={"claim":
+# print(predict(model_name="model_std",artifacts={"model":"s3://spr-ml-artifacts/prod/MLMR_STD_Fraud_Model/artifacts/model_2021-06-30.joblib","template":"s3://spr-ml-artifacts/prod/MLMR_STD_Fraud_Model/artifacts/template_data_2021-06-30.csv"},inputs={"claim":
 #     {
 #         "Mental Nervous Ind": None,
 #         "Recovery Amt": 0.0,
