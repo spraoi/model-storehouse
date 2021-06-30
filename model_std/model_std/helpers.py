@@ -8,14 +8,11 @@ def get_bucket_and_key_from_s3_uri(uri):
     bucket, key = uri.split('/',2)[-1].split('/',1)
     return bucket, key
 
-def download_obj_from_s3(bucket_name, key, local_file_name):
+def download_obj_from_s3(bucket_name, key):
     bucket = boto3.resource("s3").Bucket(bucket_name)
-    temp_file = f"{tempfile.mkdtemp()}/{local_file_name}"
-    with open(temp_file, "wb") as file_data:
-        bucket.download_fileobj(key, file_data)
-    file_data.close()
-    loaded_model = joblib.load(temp_file)
-
+    with tempfile.NamedTemporaryFile() as fp:
+        bucket.download_fileobj(key, fp)
+        loaded_model = joblib.load(fp.name)
     return loaded_model
 
 def magnificent_map(df, remap_columns):

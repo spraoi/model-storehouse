@@ -62,7 +62,7 @@ def predict(**kwargs):
     artifacts = kwargs.get("artifacts")
 
     model_bucket, model_key = get_bucket_and_key_from_s3_uri(artifacts.get("model"))
-    loaded_model = download_obj_from_s3(model_bucket, model_key,"model.joblib")
+    loaded_model = download_obj_from_s3(model_bucket, model_key)
 
     loaded_template = pd.read_csv(artifacts.get('template'))
 
