@@ -180,9 +180,24 @@ def test_train_match(train_template, test_data):
 
 
 def get_na_rows(test_data):
+    columns = [
+        "Insured Age at Loss",
+        "Insured Annualized Salary",
+        "Policy Lives",
+        "policy_tenure",
+        "days_to_report",
+        "emp_tenure",
+        "prognosis_days",
+        "Insured Gender",
+        "Insured Salary Ind",
+        "Primary Diagnosis Category",
+        "Coverage Code",
+        "SIC Code",
+    ]
+    col_locs = [test_data.columns.get_loc(col) for col in columns]
     na_inds = []
     for i in range(test_data.shape[0]):
-        if test_data.iloc[i, :].isnull().any():
+        if test_data.iloc[i, col_locs].isnull().any():
             na_inds.append("Y")
         else:
             na_inds.append("N")
