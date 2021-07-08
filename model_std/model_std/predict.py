@@ -2,7 +2,7 @@ def predict(**kwargs):
 
     import pandas as pd
     import numpy as np
-    from helpers import (
+    from model_std.helpers import (
         magnificent_map,
         resolve_formatting,
         add_policy_tenure_to_df,
@@ -126,7 +126,7 @@ def predict(**kwargs):
     ]  # ,'claimStatusCategory'
     prediction_json = json.loads(payload_data.to_json(orient="records"))
     predicted_claim = prediction_json[0] if prediction_json else None
-    return [{"inputDataSource":f"{kwargs.get('inputs').get('datasetId')}:0","entityId":kwargs.get("inputs").get("datasetId"),"predictedResult":predicted_claim}]
+    return [{"inputDataSource":f"{predicted_claim['claimNumber']}:0","entityId":predicted_claim["claimNumber"],"predictedResult":predicted_claim}]
 
 
 #example input
@@ -223,5 +223,4 @@ def predict(**kwargs):
 #         "Policy Lives": 2012,
 #         "Servicing RSO": "Chicago",
 #         "Nurse Cert End Date": None
-#     }
-# ,"datasetId":"spr:dataset_id"}))
+#     }}))
