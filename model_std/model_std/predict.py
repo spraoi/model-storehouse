@@ -126,7 +126,7 @@ def predict(**kwargs):
     ]  # ,'claimStatusCategory'
     prediction_json = json.loads(payload_data.to_json(orient="records"))
     predicted_claim = prediction_json[0] if prediction_json else None
-    return [{"inputDataSource":f"{predicted_claim['claimNumber']}:0","entityId":predicted_claim["claimNumber"],"predictedResult":predicted_claim}]
+    return [{"inputDataSource":f"{predicted_claim.get('claimNumber')}:0","entityId":predicted_claim.get("claimNumber"),"predictedResult":predicted_claim}]
 
 
 #example input
