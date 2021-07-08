@@ -59,12 +59,16 @@ def predict(**kwargs):
         "Coverage Code",
     ]
 
-    artifacts = kwargs.get("artifacts")
+    for artifact in kwargs.get("artifact"):
+        if artifact.get("dataName") == "model_artifact":
+            model_path = artifact.get("dataValue")
+        elif artifact.get("dataName") == "template_artifact":
+            template_path = artifact.get("dataValue")
 
-    model_bucket, model_key = get_bucket_and_key_from_s3_uri(artifacts.get("model"))
+    model_bucket, model_key = get_bucket_and_key_from_s3_uri(model_path)
     loaded_model = download_obj_from_s3(model_bucket, model_key)
 
-    loaded_template = pd.read_csv(artifacts.get('template'))
+    loaded_template = pd.read_csv(template_path)
 
     magnificent_data = pd.DataFrame([kwargs.get("inputs").get("claim")])
     test_data = magnificent_data[columns].copy()
@@ -131,7 +135,43 @@ def predict(**kwargs):
 
 #example input
 
-# print(predict(model_name="model_std",artifacts={"model":"s3://spr-ml-artifacts/prod/MLMR_STD_Fraud_Model/artifacts/model_2021-06-30.joblib","template":"s3://spr-ml-artifacts/prod/MLMR_STD_Fraud_Model/artifacts/template_data_2021-06-30.csv"},inputs={"claim":
+# print(predict(model_name="model_std",artifact= [
+#         {
+#             "dataId": "685b1969-e2bf-492d-9da5-fb99c65a737f",
+#             "dataName": "schema_artifact",
+#             "dataType": "artifact",
+#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_STD_Fraud_Model/artifacts/train_schema_2021-06-30.pbtxt",
+#             "dataValueType": "str"
+#         },
+#         {
+#             "dataId": "ab94e634-459b-4fdd-a1fd-401b9a2b2833",
+#             "dataName": "statistics_artifact",
+#             "dataType": "artifact",
+#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_STD_Fraud_Model/artifacts/train_stats_2021-06-30.pbtxt",
+#             "dataValueType": "str"
+#         },
+#         {
+#             "dataId": "89169025-4f6a-4199-9c5d-ff9e426d176a",
+#             "dataName": "feat_imp_artifact",
+#             "dataType": "artifact",
+#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_STD_Fraud_Model/artifacts/feature_importances_2021-06-30.csv",
+#             "dataValueType": "str"
+#         },
+#         {
+#             "dataId": "b06dd1e1-7d85-4e2f-95a3-57e76dc05d37",
+#             "dataName": "template_artifact",
+#             "dataType": "artifact",
+#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_STD_Fraud_Model/artifacts/template_data_2021-06-30.csv",
+#             "dataValueType": "str"
+#         },
+#         {
+#             "dataId": "d97e5f23-dff7-4ebf-a4d9-f4a240f5bd6b",
+#             "dataName": "model_artifact",
+#             "dataType": "artifact",
+#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_STD_Fraud_Model/artifacts/model_2021-06-30.joblib",
+#             "dataValueType": "str"
+#         }
+#     ],inputs={"claim":
 #     {
 #         "Mental Nervous Ind": None,
 #         "Recovery Amt": 0.0,
