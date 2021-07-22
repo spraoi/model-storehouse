@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "model_ffm"
+name = "model_settlement"
 version = "0.1.7"
 description = "Model Settlement"
 authors = ["Teja <teja@spraoi.ai>"]
@@ -18,6 +18,14 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
+s3fs = "~2021.6"
+boto3 = "~1.17"
+pandas = "~1.2"
+numpy = "~1.18"
+joblib = "~0.14"
+tensorflow = "~2.3"
+scikit-learn = "~0.24"
+xgboost = "~1.2"
 
 
 [build-system]

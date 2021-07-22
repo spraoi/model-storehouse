@@ -49,7 +49,7 @@ def predict(**kwargs):
     )  # for replacing empty strings with nans ""
 
     # data = pd.read_csv("magni_sett_data_mar_2021.csv")
-    label_data = pd.read_csv("settlement_labels.csv")
+    label_data = pd.read_csv("settlement_labels.csv")  # may not be needed
     data_sub = data.loc[(~data["Claim Identifier"].isin(label_data["claimNumber"])), :]
 
     settlement = pre_process_data(data_sub)
@@ -88,19 +88,21 @@ def predict(**kwargs):
     test_X = test_train_match(loaded_template, settlement_comp)
 
     # dl model prediction followed by xgb...
-
     best_iteration = loaded_xgb.get_booster().best_ntree_limit
     p1 = loaded_dl_model.predict(test_X.values)
-    p1 = posterior_correction(P1_ORIG, P1_TRAIN, p1)
+    p1 = posterior_correction(
+        P1_ORIG, P1_TRAIN, p1
+    )  # applying probability correction for dnn preds
 
     p2 = loaded_xgb.predict_proba(test_X.values, ntree_limit=best_iteration)[:, 1]
-
-    p2 = posterior_correction(P1_ORIG, P1_TRAIN, p2)
+    p2 = posterior_correction(
+        P1_ORIG, P1_TRAIN, p2
+    )  # applying probability correction for xgb preds
 
     # final_labels = [1 if x & y else 0
     #                 for (x, y) in zip(p1 >= 0.5, p2 >= 0.5)]  # majority scoring
 
-    # weighted averaging
+    # weighted averaging preferred over majority scoring currently
     final_test_prob = 0.3 * p1.reshape(-1,) + 0.7 * p2.reshape(
         -1,
     )
@@ -118,14 +120,12 @@ def predict(**kwargs):
         :, ["Claim Identifier", "probability", "p_labels_corrected"]
     ].copy()
     payload_data.columns = ["claimNumber", "predictedProbability", "predictedValue"]
-    payload_data.loc[:, "p1"] = p1
-    payload_data.loc[:, "p2"] = p2
-    payload_data.loc[:, "na_inds"] = na_inds
-    payload_data.loc[:, "batchId"] = "batchId"
-    payload_data.loc[:, "useCase"] = "use_case"
-    payload_data.loc[:, "clientId"] = "clientId"
+    payload_data.loc[:, "batchId"] = "batchId"  # placeholder for batchId
+    payload_data.loc[:, "useCase"] = "use_case"  # placeholder for use case
+    payload_data.loc[:, "clientId"] = "clientId"  # placeholder for clientId
+    # placeholder for insurance type (LTD/Longtermdisability) based on the client
     payload_data.loc[:, "insuranceType"] = "insurance_type"
-
+    # removing the artifact that only works after downloading to local file system
     os.remove("scaler.joblib")
 
     return payload_data.to_json(orient="records")

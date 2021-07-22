@@ -16,8 +16,7 @@ def resolve_formatting(df, date_cols, numeric_cols):
             try:
                 df.loc[:, col] = pd.to_datetime(df.loc[:, col])
             except:
-                df.loc[:, col] = pd.to_datetime(df.loc[:, col],
-                                                errors="coerce")
+                df.loc[:, col] = pd.to_datetime(df.loc[:, col], errors="coerce")
         elif col in numeric_cols:
             df.loc[:, col] = pd.to_numeric(df.loc[:, col])
 
@@ -35,15 +34,15 @@ def add_policy_tenure_to_df(df):
     """
     returns a df with policy tenure column appended
     """
-    df["policy_tenure"] = get_date_diff(df["Policy Effective Date"],
-                                        df["Policy Termination Date"],
-                                        interval="D")
-    df["policy_tenure_2"] = get_date_diff(df["Policy Effective Date"],
-                                          df["Received Date"],
-                                          interval="D")
-    df.loc[df["policy_tenure"].isnull(),
-           "policy_tenure"] = df.loc[df["policy_tenure"].isnull(),
-                                     "policy_tenure_2"]
+    df["policy_tenure"] = get_date_diff(
+        df["Policy Effective Date"], df["Policy Termination Date"], interval="D"
+    )
+    df["policy_tenure_2"] = get_date_diff(
+        df["Policy Effective Date"], df["Received Date"], interval="D"
+    )
+    df.loc[df["policy_tenure"].isnull(), "policy_tenure"] = df.loc[
+        df["policy_tenure"].isnull(), "policy_tenure_2"
+    ]
     df.drop("policy_tenure_2", axis=1, inplace=True)
     return df
 
@@ -53,9 +52,9 @@ def add_days_rep_to_df(df):
     returns a df with days to report column appeneded
     """
 
-    df["days_to_report"] = get_date_diff(df["Loss Date"],
-                                         df["Received Date"],
-                                         interval="D")
+    df["days_to_report"] = get_date_diff(
+        df["Loss Date"], df["Received Date"], interval="D"
+    )
     return df
 
 
@@ -63,9 +62,9 @@ def add_emp_tenure_to_df(df):
     """
     returns a df with employment tenure column appeneded
     """
-    df["emp_tenure"] = get_date_diff(df["Insured Hire Date"],
-                                     df["Loss Date"],
-                                     interval="D")
+    df["emp_tenure"] = get_date_diff(
+        df["Insured Hire Date"], df["Loss Date"], interval="D"
+    )
 
     return df
 
@@ -75,15 +74,15 @@ def add_prognosis_days_to_df(df):
     returns a df with prognosis days column appeneded
     """
 
-    df["prognosis_days"] = get_date_diff(df["Loss Date"],
-                                         df["Duration Date"],
-                                         interval="D")
+    df["prognosis_days"] = get_date_diff(
+        df["Loss Date"], df["Duration Date"], interval="D"
+    )
     col = "prognosis_days"
 
-    df.loc[(df[col].isnull()) | (df[col] <= 0),
-           col] = (pd.to_numeric(df.loc[(df[col].isnull()) |
-                                        (df[col] <= 0), "Duration Months"]) *
-                   30)
+    df.loc[(df[col].isnull()) | (df[col] <= 0), col] = (
+        pd.to_numeric(df.loc[(df[col].isnull()) | (df[col] <= 0), "Duration Months"])
+        * 30
+    )
     df.loc[df[col] <= 0, col] = np.nan
     return df
 
@@ -93,9 +92,9 @@ def add_first_payment_recd_date_days_to_df(df):
     returns a df with prognosis days column appeneded
     """
 
-    df["days_to_first_payment"] = get_date_diff(df["Loss Date"],
-                                                df["First Payment From Date"],
-                                                interval="D")
+    df["days_to_first_payment"] = get_date_diff(
+        df["Loss Date"], df["First Payment From Date"], interval="D"
+    )
 
     return df
 
@@ -113,8 +112,8 @@ def impute_numeric(df):
                 df.loc[df[col] < 0, col] = df[col].median()
         elif col == "prognosis_days":
             df.loc[df[col].isnull(), col] = (
-                pd.to_numeric(df.loc[df[col].isnull(), "Duration Months"]) *
-                30)
+                pd.to_numeric(df.loc[df[col].isnull(), "Duration Months"]) * 30
+            )
             df.loc[:, col] = df.loc[:, col].fillna(df.loc[:, col].median())
             df.loc[df[col] < 0, col] = df[col].median()
 
@@ -133,12 +132,13 @@ def to_category(df, cat_cols):
 def tokenize_pd_code(df):
 
     pd_data = df[["Claim Identifier", "Primary Diagnosis Code"]].copy()
-    pd_tokens = list(df["Primary Diagnosis Code"].fillna("_na").apply(
-        lambda x: x.split(".")))
-    pd_claims = list(
-        df["Claim Identifier"].fillna("_na").apply(lambda x: x.split(".")))
-    pd_codes = list(df["Primary Diagnosis Code"].fillna("_na").apply(
-        lambda x: x.split(".")))
+    pd_tokens = list(
+        df["Primary Diagnosis Code"].fillna("_na").apply(lambda x: x.split("."))
+    )
+    pd_claims = list(df["Claim Identifier"].fillna("_na").apply(lambda x: x.split(".")))
+    pd_codes = list(
+        df["Primary Diagnosis Code"].fillna("_na").apply(lambda x: x.split("."))
+    )
     pd_tokens_df = pd.DataFrame(pd_tokens, columns=["pd_code_1", "pd_code_2"])
     df.reset_index(inplace=True)
     df.loc[:, "pd_code_1"] = pd_tokens_df["pd_code_1"].copy()
@@ -179,8 +179,13 @@ def pre_process_data(df):
         "SIC Code",
     ]
 
-    COLUMNS = (ID + DATES + NUMERIC + CATEGORICAL +
-               ["Primary Diagnosis Code", "Primary Diagnosis Desc"])
+    COLUMNS = (
+        ID
+        + DATES
+        + NUMERIC
+        + CATEGORICAL
+        + ["Primary Diagnosis Code", "Primary Diagnosis Desc"]
+    )
 
     settlement_df = df[COLUMNS].copy()
     settlement_df = resolve_formatting(settlement_df, DATES, NUMERIC)
@@ -203,23 +208,28 @@ def clean_pd_category(df):
     df.loc[:, COL] = df.loc[:, COL].str.lower()
     df.loc[df[COL] == "", COL] = "unknown"
     df.loc[df[COL].isnull(), COL] = "unknown"
-    df.loc[df[COL].str.startswith("diseases of the circulatory system"),
-           COL] = "disease_circulatory_system"
-    df.loc[df[COL].str.startswith("diseases of the eye & adnexa"),
-           COL] = "disease_eye_adnexa"
-    df.loc[df[COL].str.startswith("diseases of the ear & mastoid process"),
-           COL] = "disease_ear_mastoid"
-    df.loc[df[COL].str.
-           startswith("diseases of the musculoskeletal system & connectiv"),
-           COL, ] = "disease_respiratory_system"
-    df.loc[df[COL].str.startswith("diseases of the respiratory system"),
-           COL] = "disease_musculoskeletal"
-    df.loc[df[COL].str.
-           startswith("injury, poisoning & certain other consequences of"),
-           COL] = "injury_poisonining"
-    df.loc[df[COL].str.
-           startswith("mental, behavioral & neurodevelopmental disorders"),
-           COL] = "disease_mental_neuro"
+    df.loc[
+        df[COL].str.startswith("diseases of the circulatory system"), COL
+    ] = "disease_circulatory_system"
+    df.loc[
+        df[COL].str.startswith("diseases of the eye & adnexa"), COL
+    ] = "disease_eye_adnexa"
+    df.loc[
+        df[COL].str.startswith("diseases of the ear & mastoid process"), COL
+    ] = "disease_ear_mastoid"
+    df.loc[
+        df[COL].str.startswith("diseases of the musculoskeletal system & connectiv"),
+        COL,
+    ] = "disease_respiratory_system"
+    df.loc[
+        df[COL].str.startswith("diseases of the respiratory system"), COL
+    ] = "disease_musculoskeletal"
+    df.loc[
+        df[COL].str.startswith("injury, poisoning & certain other consequences of"), COL
+    ] = "injury_poisonining"
+    df.loc[
+        df[COL].str.startswith("mental, behavioral & neurodevelopmental disorders"), COL
+    ] = "disease_mental_neuro"
     df.loc[df[COL].str.startswith("neoplasms"), COL] = "neoplasms"
     df.loc[~df[COL].isin(PD_CAT), COL] = "others"
 
@@ -259,9 +269,7 @@ def map_categories(df):
     #     "SS Adjustment Ind_N",
     #     "Pre-Ex Outcome_N",
     # ]
-    SS_PRI_ST_EX = [
-        "Appealed", "Appealed ALJ", "Not Applied", "Pending", "Unknown"
-    ]
+    SS_PRI_ST_EX = ["Appealed", "Appealed ALJ", "Not Applied", "Pending", "Unknown"]
 
     COVERAGE_CODE_EX = ["LTDBU", "LTDCORE", "LTDVOL"]
     PD_1_VERY_HIGH_CHANCE = [
@@ -413,15 +421,14 @@ def map_categories(df):
     PRI_OTHERS = ["(3000-3250)", "NA"]
 
     df["SIC Category"] = df["SIC Code"].astype(str).apply(lambda x: x[:2])
-    df.loc[~df["SIC Category"].isin(SIC_CAT_INC_LIST),
-           "SIC Category"] = "others"
+    df.loc[~df["SIC Category"].isin(SIC_CAT_INC_LIST), "SIC Category"] = "others"
 
-    df.loc[df["Insured Salary Ind"].isin(SALARY_IND_EX_LIST),
-           "Insured Salary Ind"] = "others"
+    df.loc[
+        df["Insured Salary Ind"].isin(SALARY_IND_EX_LIST), "Insured Salary Ind"
+    ] = "others"
     df.loc[df["SS Pri Status"].isin(SS_PRI_ST_EX), "SS Pri Status"] = "others"
 
-    df.loc[df["Coverage Code"].isin(COVERAGE_CODE_EX),
-           "Coverage Code"] = "LTDVOL"
+    df.loc[df["Coverage Code"].isin(COVERAGE_CODE_EX), "Coverage Code"] = "LTDVOL"
 
     df = tokenize_pd_code(df)
 
@@ -430,21 +437,22 @@ def map_categories(df):
         "NA",
         df["SS Pri Award Amt"].astype(str).apply(lambda x: x[1:]),
     )
-    df.loc[df["SS Pri Award Amt"].isin(PRI_0_1000),
-           "SS Pri Award Amt"] = "(0-1000)"
-    df.loc[df["SS Pri Award Amt"].isin(PRI_1000_1250),
-           "SS Pri Award Amt"] = "(1000-1250)"
-    df.loc[df["SS Pri Award Amt"].isin(PRI_1250_1500),
-           "SS Pri Award Amt"] = "(1250-1500)"
-    df.loc[df["SS Pri Award Amt"].isin(PRI_1500_1750),
-           "SS Pri Award Amt"] = "(1500-1750)"
-    df.loc[df["SS Pri Award Amt"].isin(PRI_1750_3000),
-           "SS Pri Award Amt"] = "(1750-3000)"
-    df.loc[df["SS Pri Award Amt"].isin(PRI_OTHERS),
-           "SS Pri Award Amt"] = "others"
+    df.loc[df["SS Pri Award Amt"].isin(PRI_0_1000), "SS Pri Award Amt"] = "(0-1000)"
+    df.loc[
+        df["SS Pri Award Amt"].isin(PRI_1000_1250), "SS Pri Award Amt"
+    ] = "(1000-1250)"
+    df.loc[
+        df["SS Pri Award Amt"].isin(PRI_1250_1500), "SS Pri Award Amt"
+    ] = "(1250-1500)"
+    df.loc[
+        df["SS Pri Award Amt"].isin(PRI_1500_1750), "SS Pri Award Amt"
+    ] = "(1500-1750)"
+    df.loc[
+        df["SS Pri Award Amt"].isin(PRI_1750_3000), "SS Pri Award Amt"
+    ] = "(1750-3000)"
+    df.loc[df["SS Pri Award Amt"].isin(PRI_OTHERS), "SS Pri Award Amt"] = "others"
 
-    df.loc[df["pd_code_1"].isin(PD_1_VERY_HIGH_CHANCE),
-           "pd_1_cat"] = "very_high"
+    df.loc[df["pd_code_1"].isin(PD_1_VERY_HIGH_CHANCE), "pd_1_cat"] = "very_high"
     df.loc[df["pd_code_1"].isin(PD_1_HIGH_CHANCE), "pd_1_cat"] = "high"
     df.loc[df["pd_code_1"].isin(PD_1_MED_CHANCE), "pd_1_cat"] = "medium"
     df.loc[~df["pd_code_1"].isin(PD_1_COMBINED), "pd_1_cat"] = "others"
@@ -482,8 +490,7 @@ def pre_process_pd_desc(df):
 
     cerebrovascular_disease = list(df[COL].str.contains("cerebrovascular"))
     cerebrovascular_disease = [1 if x else 0 for x in cerebrovascular_disease]
-    df.loc[:,
-           "medical_cond_comb_cerebrovascular disease"] = cerebrovascular_disease
+    df.loc[:, "medical_cond_comb_cerebrovascular disease"] = cerebrovascular_disease
 
     fracture = list(df[COL].str.contains("fracture"))
     fracture = [1 if x else 0 for x in fracture]
@@ -525,8 +532,9 @@ def pre_process_pd_desc(df):
     ankle = [1 if x else 0 for x in ankle]
     df.loc[:, "sys_organ_comb_ankle"] = ankle
 
-    thoracic_region = list((df[COL].str.contains("thorac"))
-                           | (df[COL].str.contains("thorax")))
+    thoracic_region = list(
+        (df[COL].str.contains("thorac")) | (df[COL].str.contains("thorax"))
+    )
     thoracic_region = [1 if x else 0 for x in thoracic_region]
     df.loc[:, "sys_organ_comb_thoracic region"] = thoracic_region
 
@@ -610,27 +618,28 @@ def map_diag_entities(df):
         "shoulder",
     ]
     df["Primary Diagnosis Desc"] = (
-        df["Primary Diagnosis Desc"].fillna("__na__").str.lower())
+        df["Primary Diagnosis Desc"].fillna("__na__").str.lower()
+    )
 
-    cond_1_list = [[
-        1 if x in desc else 0 for desc in list(df["Primary Diagnosis Desc"])
-    ] for x in MEDICAL_COND_LIST]
-    medical_cond_df = pd.DataFrame(cond_1_list).T
-    medical_cond_df.columns = [
-        "medical_cond_comb_" + x for x in MEDICAL_COND_LIST
+    cond_1_list = [
+        [1 if x in desc else 0 for desc in list(df["Primary Diagnosis Desc"])]
+        for x in MEDICAL_COND_LIST
     ]
+    medical_cond_df = pd.DataFrame(cond_1_list).T
+    medical_cond_df.columns = ["medical_cond_comb_" + x for x in MEDICAL_COND_LIST]
     medical_cond_df.loc[:, "medical_cond_comb_others"] = 0
-    medical_cond_df.loc[medical_cond_df.sum(axis=1) == 0,
-                        "medical_cond_comb_others"] = 1
+    medical_cond_df.loc[
+        medical_cond_df.sum(axis=1) == 0, "medical_cond_comb_others"
+    ] = 1
 
-    organ_list = [[
-        1 if x in desc else 0 for desc in list(df["Primary Diagnosis Desc"])
-    ] for x in SYS_ORGAN_LIST]
+    organ_list = [
+        [1 if x in desc else 0 for desc in list(df["Primary Diagnosis Desc"])]
+        for x in SYS_ORGAN_LIST
+    ]
     sys_organ_df = pd.DataFrame(organ_list).T
     sys_organ_df.columns = ["sys_organ_comb_" + x for x in SYS_ORGAN_LIST]
     sys_organ_df.loc[:, "sys_organ_comb_others"] = 0
-    sys_organ_df.loc[sys_organ_df.sum(axis=1) == 0,
-                     "sys_organ_comb_others"] = 1
+    sys_organ_df.loc[sys_organ_df.sum(axis=1) == 0, "sys_organ_comb_others"] = 1
     concat_df = pd.concat([df, medical_cond_df, sys_organ_df], axis=1)
 
     return concat_df
@@ -648,9 +657,7 @@ def scale_features(df, scaler):
         "Insured Age at Loss",
         "Policy Lives",
     ]
-    df.loc[:,
-           COLUMNS_SCALE] = scaler.transform(df.loc[:,
-                                                    COLUMNS_SCALE].to_numpy())
+    df.loc[:, COLUMNS_SCALE] = scaler.transform(df.loc[:, COLUMNS_SCALE].to_numpy())
     return df
 
 
@@ -696,12 +703,9 @@ def get_na_rows(test_data):
     col_locs = [test_data.columns.get_loc(col) for col in columns]
 
     na_inds = []
-    for i in range(test_data.shape[0]):
-        if test_data.iloc[i, col_locs].isnull().any():
-            na_inds.append("Y")
-        else:
-            na_inds.append("N")
-    test_data.loc[:, "NA_row"] = na_inds
+    for _, row in test_data.iterrows():
+        na_inds.append(row[col_locs].isnull().any())
+    test_data.loc[:, "NA_row"] = ["Y" if x else "N" for x in na_inds]
     return test_data
 
 
@@ -734,9 +738,9 @@ def download_obj_from_s3(bucket_name, key, artifact_type):
         file_data.close()
         return joblib.load("scaler.joblib")
 
+
 # for when we need to download artifacts for drift and skew analysis
-def load_tfdv_model_artifacts(bucket_name, key, local_file_name,
-                              artifact_type):
+def load_tfdv_model_artifacts(bucket_name, key, local_file_name, artifact_type):
     """
     csv can be read directly from pandas
     this function is applicable to non CSVs
@@ -756,3 +760,15 @@ def load_tfdv_model_artifacts(bucket_name, key, local_file_name,
         return load_model(local_file_name)
 
     return joblib.load(local_file_name)
+
+
+# another alternative way to correct probabilities
+# >99.4% correlation exists b/w both methods and are equivalent
+# source: https://andrewpwheeler.com/2020/07/04/adjusting-predicted-probabilities-for-sampling/
+def calibrate_predictions(predictions, p1_train, p1_original):
+    a = predictions / (p1_train / p1_original)
+    comp_cond = 1 - predictions
+    comp_train = 1 - p1_train
+    comp_original = 1 - p1_original
+    b = comp_cond / (comp_train / comp_original)
+    return a / (a + b)
