@@ -131,12 +131,7 @@ def to_category(df, cat_cols):
 
 def tokenize_pd_code(df):
 
-    pd_data = df[["Claim Identifier", "Primary Diagnosis Code"]].copy()
     pd_tokens = list(
-        df["Primary Diagnosis Code"].fillna("_na").apply(lambda x: x.split("."))
-    )
-    pd_claims = list(df["Claim Identifier"].fillna("_na").apply(lambda x: x.split(".")))
-    pd_codes = list(
         df["Primary Diagnosis Code"].fillna("_na").apply(lambda x: x.split("."))
     )
     pd_tokens_df = pd.DataFrame(pd_tokens, columns=["pd_code_1", "pd_code_2"])
@@ -263,12 +258,6 @@ def map_categories(df):
         "80",
     ]
     SALARY_IND_EX_LIST = ["BI-WEEKLY", "Unknown", "WEEKLY", "YEARLY"]
-    # DROP_2_CLASS = [
-    #     "TSA Ind_N",
-    #     "Insured Gender_M",
-    #     "SS Adjustment Ind_N",
-    #     "Pre-Ex Outcome_N",
-    # ]
     SS_PRI_ST_EX = ["Appealed", "Appealed ALJ", "Not Applied", "Pending", "Unknown"]
 
     COVERAGE_CODE_EX = ["LTDBU", "LTDCORE", "LTDVOL"]

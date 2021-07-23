@@ -2,6 +2,7 @@ def predict(**kwargs):
     import pandas as pd
     import numpy as np
     import os
+    import json
 
     from model_settlement.helpers import (
         pre_process_data,
@@ -24,15 +25,18 @@ def predict(**kwargs):
     P1_ORIG = 0.1
     P1_TRAIN = 0.5
 
-    artifacts = kwargs.get("artifacts")
+    for artifact in kwargs.get("artifact"):
+        if artifact.get("dataName") == "dl_model_artifact":
+            model_bucket, dl_model_key = get_bucket_and_key_from_s3_uri(
+                artifact.get("dataValue")
+            )
+        elif artifact.get("dataName") == "xgb_model_artifact":
+            xgb_model_key = get_bucket_and_key_from_s3_uri(artifact.get("dataValue"))[1]
+        elif artifact.get("dataName") == "scaler_artifact":
+            scaler_key = get_bucket_and_key_from_s3_uri(artifact.get("dataValue"))[1]
+        elif artifact.get("dataName") == "template_artifact":
+            template_key = get_bucket_and_key_from_s3_uri(artifact.get("dataValue"))[1]
 
-    model_bucket, dl_model_key = get_bucket_and_key_from_s3_uri(
-        artifacts.get("dl_model")
-    )
-
-    xgb_model_key = get_bucket_and_key_from_s3_uri(artifacts.get("xgb_model"))[1]
-    scaler_key = get_bucket_and_key_from_s3_uri(artifacts.get("scaler"))[1]
-    template_key = get_bucket_and_key_from_s3_uri(artifacts.get("template"))[1]
 
     loaded_dl_model = download_obj_from_s3(model_bucket, dl_model_key, "dl_model")
 
@@ -61,7 +65,6 @@ def predict(**kwargs):
     settlement = settlement.select_dtypes(exclude=["datetime64"])
     settlement = scale_features(settlement, loaded_scaler)
     settlement.drop(["Duration Months"], axis=1, inplace=True)
-    # serving_df = settlement.copy() for skew-analysis (TO DO)
     settlement = get_na_rows(settlement)
 
     sett_mapped = map_categories(settlement)
@@ -99,9 +102,6 @@ def predict(**kwargs):
         P1_ORIG, P1_TRAIN, p2
     )  # applying probability correction for xgb preds
 
-    # final_labels = [1 if x & y else 0
-    #                 for (x, y) in zip(p1 >= 0.5, p2 >= 0.5)]  # majority scoring
-
     # weighted averaging preferred over majority scoring currently
     final_test_prob = 0.3 * p1.reshape(-1,) + 0.7 * p2.reshape(
         -1,
@@ -120,26 +120,71 @@ def predict(**kwargs):
         :, ["Claim Identifier", "probability", "p_labels_corrected"]
     ].copy()
     payload_data.columns = ["claimNumber", "predictedProbability", "predictedValue"]
-    payload_data.loc[:, "batchId"] = "batchId"  # placeholder for batchId
-    payload_data.loc[:, "useCase"] = "use_case"  # placeholder for use case
-    payload_data.loc[:, "clientId"] = "clientId"  # placeholder for clientId
-    # placeholder for insurance type (LTD/Longtermdisability) based on the client
-    payload_data.loc[:, "insuranceType"] = "insurance_type"
     # removing the artifact that only works after downloading to local file system
     os.remove("scaler.joblib")
 
-    return payload_data.to_json(orient="records")
+    # return payload_data.to_json(orient="records")
+    prediction_json = json.loads(payload_data.to_json(orient="records"))
+    predicted_claim = prediction_json[0] if prediction_json else None
+    return [
+        {"inputDataSource": f"{predicted_claim.get('claimNumber')}:0", "entityId": predicted_claim.get("claimNumber"),
+         "predictedResult": predicted_claim}]
 
 
 print(
     predict(
         model_name="MLMR_settlement",
-        artifacts={
-            "dl_model": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/dl_model_2021-06-28.h5",
-            "scaler": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/scaler_2021-06-28.joblib",
-            "template": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/template_data_2021-06-28.csv",
-            "xgb_model": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/xgb_model_2021-06-28.joblib",
+        artifact=[
+        {
+            "dataId": "a117374f-fda2-44af-9e91-899e2b03b6d6",
+            "dataName": "schema_artifact",
+            "dataType": "artifact",
+            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/train_schema_2021-06-28.pbtxt",
+            "dataValueType": "str"
         },
+        {
+            "dataId": "3cd7b112-4a7b-46f4-ad6f-aedff8e6fd4c",
+            "dataName": "statistics_artifact",
+            "dataType": "artifact",
+            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/train_stats_2021-06-28.pbtxt",
+            "dataValueType": "str"
+        },
+        {
+            "dataId": "c0c3639b-8c42-4f33-b0cc-1e3175c1254e",
+            "dataName": "feat_imp_artifact",
+            "dataType": "artifact",
+            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/feature_importances_2021-06-28.csv",
+            "dataValueType": "str"
+        },
+        {
+            "dataId": "3015dbf4-4371-4c65-80a0-abaf8d4c4372",
+            "dataName": "template_artifact",
+            "dataType": "artifact",
+            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/template_data_2021-06-28.csv",
+            "dataValueType": "str"
+        },
+        {
+            "dataId": "004f5b93-e334-4bff-865d-eb9fc487034d",
+            "dataName": "scaler_artifact",
+            "dataType": "artifact",
+            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/scaler_2021-06-28.joblib",
+            "dataValueType": "str"
+        },
+        {
+            "dataId": "68346e87-65e4-46d0-8a0e-941a0ebcc37a",
+            "dataName": "xgb_model_artifact",
+            "dataType": "artifact",
+            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/xgb_model_2021-06-28.joblib",
+            "dataValueType": "str"
+        },
+        {
+            "dataId": "1007bf57-66fc-4f19-bc1b-fce62f5e34b0",
+            "dataName": "dl_model_artifact",
+            "dataType": "artifact",
+            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/dl_model_2021-06-28.h5",
+            "dataValueType": "str"
+        }
+    ],
         inputs={
             "claim": {
                 "Mental Nervous Ind": "",
@@ -235,3 +280,5 @@ print(
         },
     )
 )
+
+
