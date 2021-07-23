@@ -21,7 +21,6 @@ def predict(**kwargs):
         posterior_correction,
     )
 
-    os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2"
     P1_ORIG = 0.1
     P1_TRAIN = 0.5
 
@@ -52,8 +51,7 @@ def predict(**kwargs):
         r"^\s*$", np.nan, regex=True
     )  # for replacing empty strings with nans ""
 
-    # data = pd.read_csv("magni_sett_data_mar_2021.csv")
-    label_data = pd.read_csv("settlement_labels.csv")  # may not be needed
+    label_data = pd.read_csv("data/settlement_labels.csv")  # may not be needed
     data_sub = data.loc[(~data["Claim Identifier"].isin(label_data["claimNumber"])), :]
 
     settlement = pre_process_data(data_sub)
@@ -123,7 +121,6 @@ def predict(**kwargs):
     # removing the artifact that only works after downloading to local file system
     os.remove("scaler.joblib")
 
-    # return payload_data.to_json(orient="records")
     prediction_json = json.loads(payload_data.to_json(orient="records"))
     predicted_claim = prediction_json[0] if prediction_json else None
     return [
@@ -131,154 +128,154 @@ def predict(**kwargs):
          "predictedResult": predicted_claim}]
 
 
-print(
-    predict(
-        model_name="MLMR_settlement",
-        artifact=[
-        {
-            "dataId": "a117374f-fda2-44af-9e91-899e2b03b6d6",
-            "dataName": "schema_artifact",
-            "dataType": "artifact",
-            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/train_schema_2021-06-28.pbtxt",
-            "dataValueType": "str"
-        },
-        {
-            "dataId": "3cd7b112-4a7b-46f4-ad6f-aedff8e6fd4c",
-            "dataName": "statistics_artifact",
-            "dataType": "artifact",
-            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/train_stats_2021-06-28.pbtxt",
-            "dataValueType": "str"
-        },
-        {
-            "dataId": "c0c3639b-8c42-4f33-b0cc-1e3175c1254e",
-            "dataName": "feat_imp_artifact",
-            "dataType": "artifact",
-            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/feature_importances_2021-06-28.csv",
-            "dataValueType": "str"
-        },
-        {
-            "dataId": "3015dbf4-4371-4c65-80a0-abaf8d4c4372",
-            "dataName": "template_artifact",
-            "dataType": "artifact",
-            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/template_data_2021-06-28.csv",
-            "dataValueType": "str"
-        },
-        {
-            "dataId": "004f5b93-e334-4bff-865d-eb9fc487034d",
-            "dataName": "scaler_artifact",
-            "dataType": "artifact",
-            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/scaler_2021-06-28.joblib",
-            "dataValueType": "str"
-        },
-        {
-            "dataId": "68346e87-65e4-46d0-8a0e-941a0ebcc37a",
-            "dataName": "xgb_model_artifact",
-            "dataType": "artifact",
-            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/xgb_model_2021-06-28.joblib",
-            "dataValueType": "str"
-        },
-        {
-            "dataId": "1007bf57-66fc-4f19-bc1b-fce62f5e34b0",
-            "dataName": "dl_model_artifact",
-            "dataType": "artifact",
-            "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/dl_model_2021-06-28.h5",
-            "dataValueType": "str"
-        }
-    ],
-        inputs={
-            "claim": {
-                "Mental Nervous Ind": "",
-                "Recovery Amt": " 0000000000000000000000.000000",
-                "Modified RTW Date": None,
-                "Any Occ period": "",
-                "Claim Number": "GDC-46016",
-                "Policy Effective Date": "01/01/2017",
-                "DOT Exertion Level (Primary)": "Unknown",
-                "Last Payment To Date": "08/29/2020",
-                "DOT Desc": "",
-                "Elimination Period": "",
-                "DOT Code": "",
-                "Voc Rehab Outcome": "",
-                "Policy Line of Business": "LTD",
-                "Expected Term Date": None,
-                "Clinical End Date": None,
-                "Voc Rehab Service Requested": "",
-                "Policy Termination Date": None,
-                "Any Occ Start Date": "03/02/2023",
-                "Duration Months": "12",
-                "MentalNervousDesc": "",
-                "Closed Date": None,
-                "Insured State": "IL",
-                "SS Pri Award Amt": "-(2000-2250)",
-                "Any Occ Decision Due Date": None,
-                "Elimination Days": "0",
-                "SS Pursue Ind": "",
-                "Any Occ Ind": "",
-                "Elimination Ind": "",
-                "Plan Benefit Pct": "0.6667",
-                "Claim Status Description": "Benefit Case Under Review",
-                "Secondary Diagnosis Code": "",
-                "Secondary Diagnosis Category": "",
-                "Claim Identifier": "GDC-46016-03",
-                "SS Pri Award Eff Date": "09/01/2020",
-                "Pre-Ex Outcome": "Y",
-                "Claim Status Category": "ACTIVE",
-                "Primary Diagnosis Code": "J84.9",
-                "Voc Rehab Status": "",
-                "Claim Cause Desc": "OTHER SICKNESS",
-                "Insured Salary Ind": "WEEKLY",
-                "Insured Zip": "60438",
-                "SIC Code": "8069",
-                "First Payment From Date": "08/29/2020",
-                "SS Reject Code": "",
-                "Any Occ Decision Made Date": "08/13/2020",
-                "SIC Category": "",
-                "Insured Age at Loss": "63",
-                "Received Date": "03/12/2020",
-                "Secondary Diagnosis Desc": "",
-                "Voc Rehab TSA Date": None,
-                "TSA Ind": "N",
-                "Secondary Diagnosis Category Desc": "",
-                "SIC Desc": "SPECIALTY HOSPITAL EXC., PSYCHIATRIC",
-                "Claim State": "IL",
-                "ThirdPartyReferralDescription": "",
-                "Occ Code": "",
-                "Approval Date": "08/13/2020",
-                "SS Awarded Date": None,
-                "Primary Diagnosis Category": "Diseases of the respiratory system",
-                "Taxable Pct": "0",
-                "RTW Date": None,
-                "Eligibility Outcome": "Approved",
-                "SS Est Start Date": None,
-                "SS Pri Status": "Approved",
-                "Plan Duration Date": None,
-                "ThirdPartyReferralIndicator": "",
-                "Primary Diagnosis Desc": "Interstitial pulmonary disease, unspecified",
-                "Duration Date": "08/28/2021",
-                "SocialSecurityPrimaryAwardType": "Primary Social Security Retirement with Freeze",
-                "Gross Benefit Ind": 12,
-                "Insured Hire Date": "04/30/1985",
-                "Occ Category": "",
-                "SubstanceAbuseDesc": "",
-                "Insured Gender": "M",
-                "Any Occ Category": "Own Occ",
-                "Loss Date": "03/02/2020",
-                "Voc Rehab Active Status": "",
-                "Coverage Code": "LTD",
-                "SS Adjustment Ind": "Y",
-                "SS Eligible Ind": "Y",
-                "Claim Status Code": "Open",
-                "originalValues": "{'values': {'BenefitNumber': 'GDC-46016-03', 'ClaimStatusCategory': 'Open', 'ClaimCauseDescription': 'Sickness', 'InsuredGender': 'Male', 'InsuredAnnualizedSalary': '38750-39000', 'GrossBenefitIndicator': 'Monthly', 'GrossBenefit': '2000-2250', 'NetBenefit': '0-250', 'EligibilityOutcome': 'Post Approval Rules', 'BenefitCaseType': 'LTD', 'CaseSize': '400-425'}}",
-                "Gross Benefit": 25500.0,
-                "Insured Annualized Salary": 38875.0,
-                "Net Benefit": 1500.0,
-                "Policy Lives": 412.0,
-                "Servicing RSO": "Chicago",
-                "Nurse Cert End Date": None,
-            },
-            "datasetId": "spr:dataset_id",
-        },
-    )
-)
+# print(
+#     predict(
+#         model_name="MLMR_settlement",
+#         artifact=[
+#         {
+#             "dataId": "a117374f-fda2-44af-9e91-899e2b03b6d6",
+#             "dataName": "schema_artifact",
+#             "dataType": "artifact",
+#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/train_schema_2021-06-28.pbtxt",
+#             "dataValueType": "str"
+#         },
+#         {
+#             "dataId": "3cd7b112-4a7b-46f4-ad6f-aedff8e6fd4c",
+#             "dataName": "statistics_artifact",
+#             "dataType": "artifact",
+#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/train_stats_2021-06-28.pbtxt",
+#             "dataValueType": "str"
+#         },
+#         {
+#             "dataId": "c0c3639b-8c42-4f33-b0cc-1e3175c1254e",
+#             "dataName": "feat_imp_artifact",
+#             "dataType": "artifact",
+#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/feature_importances_2021-06-28.csv",
+#             "dataValueType": "str"
+#         },
+#         {
+#             "dataId": "3015dbf4-4371-4c65-80a0-abaf8d4c4372",
+#             "dataName": "template_artifact",
+#             "dataType": "artifact",
+#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/template_data_2021-06-28.csv",
+#             "dataValueType": "str"
+#         },
+#         {
+#             "dataId": "004f5b93-e334-4bff-865d-eb9fc487034d",
+#             "dataName": "scaler_artifact",
+#             "dataType": "artifact",
+#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/scaler_2021-06-28.joblib",
+#             "dataValueType": "str"
+#         },
+#         {
+#             "dataId": "68346e87-65e4-46d0-8a0e-941a0ebcc37a",
+#             "dataName": "xgb_model_artifact",
+#             "dataType": "artifact",
+#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/xgb_model_2021-06-28.joblib",
+#             "dataValueType": "str"
+#         },
+#         {
+#             "dataId": "1007bf57-66fc-4f19-bc1b-fce62f5e34b0",
+#             "dataName": "dl_model_artifact",
+#             "dataType": "artifact",
+#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/dl_model_2021-06-28.h5",
+#             "dataValueType": "str"
+#         }
+#     ],
+#         inputs={
+#             "claim": {
+#                 "Mental Nervous Ind": "",
+#                 "Recovery Amt": " 0000000000000000000000.000000",
+#                 "Modified RTW Date": None,
+#                 "Any Occ period": "",
+#                 "Claim Number": "GDC-46016",
+#                 "Policy Effective Date": "01/01/2017",
+#                 "DOT Exertion Level (Primary)": "Unknown",
+#                 "Last Payment To Date": "08/29/2020",
+#                 "DOT Desc": "",
+#                 "Elimination Period": "",
+#                 "DOT Code": "",
+#                 "Voc Rehab Outcome": "",
+#                 "Policy Line of Business": "LTD",
+#                 "Expected Term Date": None,
+#                 "Clinical End Date": None,
+#                 "Voc Rehab Service Requested": "",
+#                 "Policy Termination Date": None,
+#                 "Any Occ Start Date": "03/02/2023",
+#                 "Duration Months": "12",
+#                 "MentalNervousDesc": "",
+#                 "Closed Date": None,
+#                 "Insured State": "IL",
+#                 "SS Pri Award Amt": "-(2000-2250)",
+#                 "Any Occ Decision Due Date": None,
+#                 "Elimination Days": "0",
+#                 "SS Pursue Ind": "",
+#                 "Any Occ Ind": "",
+#                 "Elimination Ind": "",
+#                 "Plan Benefit Pct": "0.6667",
+#                 "Claim Status Description": "Benefit Case Under Review",
+#                 "Secondary Diagnosis Code": "",
+#                 "Secondary Diagnosis Category": "",
+#                 "Claim Identifier": "GDC-46016-03",
+#                 "SS Pri Award Eff Date": "09/01/2020",
+#                 "Pre-Ex Outcome": "Y",
+#                 "Claim Status Category": "ACTIVE",
+#                 "Primary Diagnosis Code": "J84.9",
+#                 "Voc Rehab Status": "",
+#                 "Claim Cause Desc": "OTHER SICKNESS",
+#                 "Insured Salary Ind": "WEEKLY",
+#                 "Insured Zip": "60438",
+#                 "SIC Code": "8069",
+#                 "First Payment From Date": "08/29/2020",
+#                 "SS Reject Code": "",
+#                 "Any Occ Decision Made Date": "08/13/2020",
+#                 "SIC Category": "",
+#                 "Insured Age at Loss": "63",
+#                 "Received Date": "03/12/2020",
+#                 "Secondary Diagnosis Desc": "",
+#                 "Voc Rehab TSA Date": None,
+#                 "TSA Ind": "N",
+#                 "Secondary Diagnosis Category Desc": "",
+#                 "SIC Desc": "SPECIALTY HOSPITAL EXC., PSYCHIATRIC",
+#                 "Claim State": "IL",
+#                 "ThirdPartyReferralDescription": "",
+#                 "Occ Code": "",
+#                 "Approval Date": "08/13/2020",
+#                 "SS Awarded Date": None,
+#                 "Primary Diagnosis Category": "Diseases of the respiratory system",
+#                 "Taxable Pct": "0",
+#                 "RTW Date": None,
+#                 "Eligibility Outcome": "Approved",
+#                 "SS Est Start Date": None,
+#                 "SS Pri Status": "Approved",
+#                 "Plan Duration Date": None,
+#                 "ThirdPartyReferralIndicator": "",
+#                 "Primary Diagnosis Desc": "Interstitial pulmonary disease, unspecified",
+#                 "Duration Date": "08/28/2021",
+#                 "SocialSecurityPrimaryAwardType": "Primary Social Security Retirement with Freeze",
+#                 "Gross Benefit Ind": 12,
+#                 "Insured Hire Date": "04/30/1985",
+#                 "Occ Category": "",
+#                 "SubstanceAbuseDesc": "",
+#                 "Insured Gender": "M",
+#                 "Any Occ Category": "Own Occ",
+#                 "Loss Date": "03/02/2020",
+#                 "Voc Rehab Active Status": "",
+#                 "Coverage Code": "LTD",
+#                 "SS Adjustment Ind": "Y",
+#                 "SS Eligible Ind": "Y",
+#                 "Claim Status Code": "Open",
+#                 "originalValues": "{'values': {'BenefitNumber': 'GDC-46016-03', 'ClaimStatusCategory': 'Open', 'ClaimCauseDescription': 'Sickness', 'InsuredGender': 'Male', 'InsuredAnnualizedSalary': '38750-39000', 'GrossBenefitIndicator': 'Monthly', 'GrossBenefit': '2000-2250', 'NetBenefit': '0-250', 'EligibilityOutcome': 'Post Approval Rules', 'BenefitCaseType': 'LTD', 'CaseSize': '400-425'}}",
+#                 "Gross Benefit": 25500.0,
+#                 "Insured Annualized Salary": 38875.0,
+#                 "Net Benefit": 1500.0,
+#                 "Policy Lives": 412.0,
+#                 "Servicing RSO": "Chicago",
+#                 "Nurse Cert End Date": None,
+#             },
+#             "datasetId": "spr:dataset_id",
+#         },
+#     )
+# )
 
 

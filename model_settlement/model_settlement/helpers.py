@@ -726,38 +726,8 @@ def download_obj_from_s3(bucket_name, key, artifact_type):
             bucket.download_fileobj(key, file_data)
         file_data.close()
         return joblib.load("scaler.joblib")
-
-
-# for when we need to download artifacts for drift and skew analysis
-def load_tfdv_model_artifacts(bucket_name, key, local_file_name, artifact_type):
-    """
-    csv can be read directly from pandas
-    this function is applicable to non CSVs
-    joblibs, pbtxt extensions etc
-    """
-    bucket = boto3.resource("s3").Bucket(bucket_name)
-    with open(local_file_name, "wb") as file_data:
-        bucket.download_fileobj(key, file_data)
-    file_data.close()
-    # if artifact_type == "statistics_artifact":
-    #     return tfdv.load_stats_text(local_file_name)
-
-    # elif artifact_type == "schema_artifact":
-    #     return tfdv.load_schema_text(local_file_name)
-
-    if artifact_type == "dl_model_artifact":
-        return load_model(local_file_name)
-
-    return joblib.load(local_file_name)
-
-
-# another alternative way to correct probabilities
-# >99.4% correlation exists b/w both methods and are equivalent
-# source: https://andrewpwheeler.com/2020/07/04/adjusting-predicted-probabilities-for-sampling/
-def calibrate_predictions(predictions, p1_train, p1_original):
-    a = predictions / (p1_train / p1_original)
-    comp_cond = 1 - predictions
-    comp_train = 1 - p1_train
-    comp_original = 1 - p1_original
-    b = comp_cond / (comp_train / comp_original)
-    return a / (a + b)
+    #TODO: investigate why this throws an EOFError
+    # else:
+    #     with tempfile.NamedTemporaryFile(suffix=".joblib") as fp:
+    #         bucket.download_fileobj(key, fp)
+    #         return joblib.load(fp.name)
