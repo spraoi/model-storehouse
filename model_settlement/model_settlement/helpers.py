@@ -135,34 +135,34 @@ def clean_pd_category(df):
         "disease_mental_neuro",
         "neoplasms",
     ]
-    COL = "Primary Diagnosis Category"
-    df.loc[:, COL] = df.loc[:, COL].str.lower()
-    df.loc[df[COL] == "", COL] = "unknown"
-    df.loc[df[COL].isnull(), COL] = "unknown"
+    PRIMARY_DIAG_CAT = "Primary Diagnosis Category"
+    df.loc[:, PRIMARY_DIAG_CAT] = df.loc[:, PRIMARY_DIAG_CAT].str.lower()
+    df.loc[df[PRIMARY_DIAG_CAT] == "", PRIMARY_DIAG_CAT] = "unknown"
+    df.loc[df[PRIMARY_DIAG_CAT].isnull(), PRIMARY_DIAG_CAT] = "unknown"
     df.loc[
-        df[COL].str.startswith("diseases of the circulatory system"), COL
+        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the circulatory system"), PRIMARY_DIAG_CAT
     ] = "disease_circulatory_system"
     df.loc[
-        df[COL].str.startswith("diseases of the eye & adnexa"), COL
+        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the eye & adnexa"), PRIMARY_DIAG_CAT
     ] = "disease_eye_adnexa"
     df.loc[
-        df[COL].str.startswith("diseases of the ear & mastoid process"), COL
+        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the ear & mastoid process"), PRIMARY_DIAG_CAT
     ] = "disease_ear_mastoid"
     df.loc[
-        df[COL].str.startswith("diseases of the musculoskeletal system & connectiv"),
-        COL,
+        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the musculoskeletal system & connectiv"),
+        PRIMARY_DIAG_CAT,
     ] = "disease_respiratory_system"
     df.loc[
-        df[COL].str.startswith("diseases of the respiratory system"), COL
+        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the respiratory system"), PRIMARY_DIAG_CAT
     ] = "disease_musculoskeletal"
     df.loc[
-        df[COL].str.startswith("injury, poisoning & certain other consequences of"), COL
+        df[PRIMARY_DIAG_CAT].str.startswith("injury, poisoning & certain other consequences of"), PRIMARY_DIAG_CAT
     ] = "injury_poisonining"
     df.loc[
-        df[COL].str.startswith("mental, behavioral & neurodevelopmental disorders"), COL
+        df[PRIMARY_DIAG_CAT].str.startswith("mental, behavioral & neurodevelopmental disorders"), PRIMARY_DIAG_CAT
     ] = "disease_mental_neuro"
-    df.loc[df[COL].str.startswith("neoplasms"), COL] = "neoplasms"
-    df.loc[~df[COL].isin(PD_CAT), COL] = "others"
+    df.loc[df[PRIMARY_DIAG_CAT].str.startswith("neoplasms"), PRIMARY_DIAG_CAT] = "neoplasms"
+    df.loc[~df[PRIMARY_DIAG_CAT].isin(PD_CAT), PRIMARY_DIAG_CAT] = "others"
 
     return df
 
@@ -406,59 +406,59 @@ def map_categories(df):
 
 
 def pre_process_pd_desc(df):
-    COL = "Primary Diagnosis Desc"
+    PRIMARY_DIAG_DESC = "Primary Diagnosis Desc"
 
-    df[COL] = df[COL].fillna("__na__").str.lower()
-    inter_vertebral_dis = list(df[COL].str.contains("intervertebral dis"))
+    df[PRIMARY_DIAG_DESC] = df[PRIMARY_DIAG_DESC].fillna("__na__").str.lower()
+    inter_vertebral_dis = list(df[PRIMARY_DIAG_DESC].str.contains("intervertebral dis"))
     inter_vertebral_dis = [1 if x else 0 for x in inter_vertebral_dis]
     df.loc[:, "medical_cond_comb_intervertebral disease"] = inter_vertebral_dis
 
-    cerebrovascular_disease = list(df[COL].str.contains("cerebrovascular"))
+    cerebrovascular_disease = list(df[PRIMARY_DIAG_DESC].str.contains("cerebrovascular"))
     cerebrovascular_disease = [1 if x else 0 for x in cerebrovascular_disease]
     df.loc[:, "medical_cond_comb_cerebrovascular disease"] = cerebrovascular_disease
 
-    fracture = list(df[COL].str.contains("fracture"))
+    fracture = list(df[PRIMARY_DIAG_DESC].str.contains("fracture"))
     fracture = [1 if x else 0 for x in fracture]
     df.loc[:, "medical_cond_comb_fracture"] = fracture
 
-    acetabulum_disorder = list(df[COL].str.contains("acetabulum"))
+    acetabulum_disorder = list(df[PRIMARY_DIAG_DESC].str.contains("acetabulum"))
     acetabulum_disorder = [1 if x else 0 for x in acetabulum_disorder]
     df.loc[:, "medical_cond_comb_acetabulum disorder"] = acetabulum_disorder
 
-    spondylosis = list(df[COL].str.contains("spondylo"))
+    spondylosis = list(df[PRIMARY_DIAG_DESC].str.contains("spondylo"))
     spondylosis = [1 if x else 0 for x in spondylosis]
     df.loc[:, "medical_cond_comb_spondylosis"] = spondylosis
 
-    sprains = list(df[COL].str.contains("sprain"))
+    sprains = list(df[PRIMARY_DIAG_DESC].str.contains("sprain"))
     sprains = [1 if x else 0 for x in sprains]
     df.loc[:, "medical_cond_comb_sprain"] = sprains
 
-    localization = list(df[COL].str.contains("localization"))
+    localization = list(df[PRIMARY_DIAG_DESC].str.contains("localization"))
     localization = [1 if x else 0 for x in localization]
     df.loc[:, "medical_cond_comb_localization related"] = localization
 
-    pain = list(df[COL].str.contains("pain"))
+    pain = list(df[PRIMARY_DIAG_DESC].str.contains("pain"))
     pain = [1 if x else 0 for x in pain]
     df.loc[:, "medical_cond_comb_pain"] = pain
 
-    cervix = list(df[COL].str.contains("cervi"))
+    cervix = list(df[PRIMARY_DIAG_DESC].str.contains("cervi"))
     cervix = [1 if x else 0 for x in cervix]
     df.loc[:, "sys_organ_comb_cervical"] = cervix
 
-    ligaments = list(df[COL].str.contains("ligament"))
+    ligaments = list(df[PRIMARY_DIAG_DESC].str.contains("ligament"))
     ligaments = [1 if x else 0 for x in ligaments]
     df.loc[:, "sys_organ_comb_ligament"] = ligaments
 
-    lumbosacral = list(df[COL].str.contains("lumbosacral"))
+    lumbosacral = list(df[PRIMARY_DIAG_DESC].str.contains("lumbosacral"))
     lumbosacral = [1 if x else 0 for x in lumbosacral]
     df.loc[:, "sys_organ_comb_lumbosacral"] = lumbosacral
 
-    ankle = list(df[COL].str.contains("ankle"))
+    ankle = list(df[PRIMARY_DIAG_DESC].str.contains("ankle"))
     ankle = [1 if x else 0 for x in ankle]
     df.loc[:, "sys_organ_comb_ankle"] = ankle
 
     thoracic_region = list(
-        (df[COL].str.contains("thorac")) | (df[COL].str.contains("thorax"))
+        (df[PRIMARY_DIAG_DESC].str.contains("thorac")) | (df[PRIMARY_DIAG_DESC].str.contains("thorax"))
     )
     thoracic_region = [1 if x else 0 for x in thoracic_region]
     df.loc[:, "sys_organ_comb_thoracic region"] = thoracic_region
