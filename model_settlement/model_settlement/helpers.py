@@ -13,10 +13,7 @@ def resolve_formatting(df, date_cols, numeric_cols):
     """
     for col in list(df.columns):
         if col in date_cols:
-            try:
-                df.loc[:, col] = pd.to_datetime(df.loc[:, col])
-            except:
-                df.loc[:, col] = pd.to_datetime(df.loc[:, col], errors="coerce")
+            df.loc[:, col] = pd.to_datetime(df.loc[:, col], errors="coerce")
         elif col in numeric_cols:
             df.loc[:, col] = pd.to_numeric(df.loc[:, col])
 
@@ -47,27 +44,6 @@ def add_policy_tenure_to_df(df):
     return df
 
 
-def add_days_rep_to_df(df):
-    """
-    returns a df with days to report column appeneded
-    """
-
-    df["days_to_report"] = get_date_diff(
-        df["Loss Date"], df["Received Date"], interval="D"
-    )
-    return df
-
-
-def add_emp_tenure_to_df(df):
-    """
-    returns a df with employment tenure column appeneded
-    """
-    df["emp_tenure"] = get_date_diff(
-        df["Insured Hire Date"], df["Loss Date"], interval="D"
-    )
-
-    return df
-
 
 def add_prognosis_days_to_df(df):
     """
@@ -87,46 +63,6 @@ def add_prognosis_days_to_df(df):
     return df
 
 
-def add_first_payment_recd_date_days_to_df(df):
-    """
-    returns a df with prognosis days column appeneded
-    """
-
-    df["days_to_first_payment"] = get_date_diff(
-        df["Loss Date"], df["First Payment From Date"], interval="D"
-    )
-
-    return df
-
-
-def impute_numeric(df):
-    """
-    returns a df with numeric features imputed.
-    Slighlty different imputation logic used for prognosis days.
-    """
-    for col in df.columns:
-        #         print(col)
-        if col != "prognosis_days":
-            if df[col].dtypes == "float64":
-                df.loc[:, col] = df.loc[:, col].fillna(df.loc[:, col].median())
-                df.loc[df[col] < 0, col] = df[col].median()
-        elif col == "prognosis_days":
-            df.loc[df[col].isnull(), col] = (
-                pd.to_numeric(df.loc[df[col].isnull(), "Duration Months"]) * 30
-            )
-            df.loc[:, col] = df.loc[:, col].fillna(df.loc[:, col].median())
-            df.loc[df[col] < 0, col] = df[col].median()
-
-    return df
-
-
-def to_category(df, cat_cols):
-    """
-    return df with the categorical features formatted as pandas category dtype
-    """
-    for col in cat_cols:
-        df.loc[:, col] = df.loc[:, col].astype("category")
-    return df
 
 
 def tokenize_pd_code(df):
