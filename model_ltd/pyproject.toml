@@ -24,7 +24,6 @@ pandas = "~1.2"
 numpy = "~1.18"
 joblib = "~0.14"
 scikit-learn = "~0.24"
-xgboost = "~1.2"
 
 
 [build-system]
