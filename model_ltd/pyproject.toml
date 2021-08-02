@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "model_std"
-version = "0.1.4"
-description = "Model STD"
+name = "model_ltd"
+version = "0.1.0"
+description = "Model LTD"
 authors = ["Teja <teja@spraoi.ai>"]
 maintainers = [
     "TBD <TBD@spraoi.ai>",
@@ -14,19 +14,17 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
-packages = [
-    { include = "model_std" }
-]
+
 
 [tool.poetry.dependencies]
 python = "^3.8"
+s3fs = "~2021.6"
+boto3 = "~1.17"
 pandas = "~1.2"
 numpy = "~1.18"
 joblib = "~0.14"
-boto3 = "~1.17"
-xgboost = "~1.2"
 scikit-learn = "~0.24"
-s3fs = "~2021.6"
+
 
 [build-system]
 requires = ["poetry>=0.12"]
