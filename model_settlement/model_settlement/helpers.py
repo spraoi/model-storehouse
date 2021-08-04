@@ -656,14 +656,10 @@ def download_obj_from_s3(bucket_name, key, artifact_type):
         with tempfile.NamedTemporaryFile(suffix=".joblib") as fp:
             bucket.download_fileobj(key, fp)
             return joblib.load(fp.name)
-    # scaler doesn't seem, to work without saving and loading locally
     else:
-        with open("scaler.joblib", "wb") as file_data:
-            bucket.download_fileobj(key, file_data)
-        file_data.close()
-        return joblib.load("scaler.joblib")
-    #TODO: investigate why this throws an EOFError
-    # else:
-    #     with tempfile.NamedTemporaryFile(suffix=".joblib") as fp:
-    #         bucket.download_fileobj(key, fp)
-    #         return joblib.load(fp.name)
+        with tempfile.TemporaryDirectory() as dirpath:
+            #tempfile throws an EOFError for scaler. Use normal file inside temp directory
+            with open(f"{dirpath}/scaler.joblib", "wb") as file_data:
+                bucket.download_fileobj(key, file_data)
+            file_data.close()
+            return joblib.load(f"{dirpath}/scaler.joblib")

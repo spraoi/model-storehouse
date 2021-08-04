@@ -114,8 +114,7 @@ def predict(**kwargs):
         :, ["Claim Identifier", "probability", "p_labels_corrected"]
     ].copy()
     payload_data.columns = ["claimNumber", "predictedProbability", "predictedValue"]
-    # removing the artifact that only works after downloading to local file system
-    os.remove("scaler.joblib")
+
 
     prediction_json = json.loads(payload_data.to_json(orient="records"))
     predicted_claim = prediction_json[0] if prediction_json else None
