@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "model_ffm"
-version = "0.1.7"
+version = "0.1.8"
 description = "Model FFM"
 authors = ["Teja <teja@spraoi.ai>"]
 maintainers = [
@@ -21,9 +21,9 @@ include = ["model_ffm/data/*"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-tensorflow = "~2.3"
+tensorflow = "~2.5"
 pandas = "~1.2"
-numpy = "~1.18"
+numpy = "~1.19"
 inflection = "~0.5"
 joblib = "~1.0"
 tokenizers = "~0.10"

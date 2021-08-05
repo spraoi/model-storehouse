@@ -37,11 +37,14 @@ speedups = ["aiodns", "brotlipy", "cchardet"]
 
 [[package]]
 name = "aioitertools"
-version = "0.8.0"
+version = "0.7.1"
 description = "itertools and builtins for AsyncIO and mixed iterables"
 category = "main"
 optional = false
 python-versions = ">=3.6"
+
+[package.dependencies]
+typing_extensions = ">=3.7"
 
 [[package]]
 name = "async-timeout"
@@ -309,25 +312,6 @@ optional = false
 python-versions = "*"
 
 [[package]]
-name = "xgboost"
-version = "1.2.1"
-description = "XGBoost Python Package"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-numpy = "*"
-scipy = "*"
-
-[package.extras]
-dask = ["dask", "pandas", "distributed"]
-datatable = ["datatable"]
-pandas = ["pandas"]
-plotting = ["graphviz", "matplotlib"]
-scikit-learn = ["scikit-learn"]
-
-[[package]]
 name = "yarl"
 version = "1.6.3"
 description = "Yet another URL library"
@@ -342,7 +326,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.8"
-content-hash = "b5e1e464b6ee42b12d5d2d72eea6a555bcce11494ad201b270ba7e3c6ea86c0b"
+content-hash = "11bf132b095436f537fb16525d91c88ce439eeb5b8856921581ed56a89ebfd26"
 
 [metadata.files]
 aiobotocore = [
@@ -388,8 +372,8 @@ aiohttp = [
     {file = "aiohttp-3.7.4.post0.tar.gz", hash = "sha256:493d3299ebe5f5a7c66b9819eacdcfbbaaf1a8e84911ddffcdc48888497afecf"},
 ]
 aioitertools = [
-    {file = "aioitertools-0.8.0-py3-none-any.whl", hash = "sha256:3a141f01d1050ac8c01917aee248d262736dab875ce0471f0dba5f619346b452"},
-    {file = "aioitertools-0.8.0.tar.gz", hash = "sha256:8b02facfbc9b0f1867739949a223f3d3267ed8663691cc95abd94e2c1d8c2b46"},
+    {file = "aioitertools-0.7.1-py3-none-any.whl", hash = "sha256:8972308474c41ed5e0636819f948ebff32f2318e70f7e7d23cd208c4357cc773"},
+    {file = "aioitertools-0.7.1.tar.gz", hash = "sha256:54a56c7cf3b5290d1cb5e8974353c9f52c677612b5d69a859369a020c53414a3"},
 ]
 async-timeout = [
     {file = "async-timeout-3.0.1.tar.gz", hash = "sha256:0c3c816a028d47f659d6ff5c745cb2acf1f966da1fe5c19c77a70282b25f4c5f"},
@@ -600,13 +584,6 @@ urllib3 = [
 ]
 wrapt = [
     {file = "wrapt-1.12.1.tar.gz", hash = "sha256:b62ffa81fb85f4332a4f609cab4ac40709470da05643a082ec1eb88e6d9b97d7"},
-]
-xgboost = [
-    {file = "xgboost-1.2.1-py3-none-macosx_10_13_x86_64.macosx_10_14_x86_64.macosx_10_15_x86_64.whl", hash = "sha256:618257aab3fffe0b5b5c88f27d21dc16a388ac351a0da73a7cea1d6c74fb9899"},
-    {file = "xgboost-1.2.1-py3-none-manylinux2010_x86_64.whl", hash = "sha256:e990258b13cdbfc8761c61bb196677b9de3f63173890d4448b533a570c8790e3"},
-    {file = "xgboost-1.2.1-py3-none-manylinux2014_aarch64.whl", hash = "sha256:0b03f608b67df1a7d4f29abcb2952067790d61207073b033b1c99d2f3ddaef6c"},
-    {file = "xgboost-1.2.1-py3-none-win_amd64.whl", hash = "sha256:f687948261795cc945e3a0b7b40721bccaa600d8d34212d7a0d8564e7310a5c9"},
-    {file = "xgboost-1.2.1.tar.gz", hash = "sha256:7f22e30363b55a996adfcecb8520ed50e5d816909e669c649e52abeede9a2a8a"},
 ]
 yarl = [
     {file = "yarl-1.6.3-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:0355a701b3998dcd832d0dc47cc5dedf3874f966ac7f870e0f3a6788d802d434"},
