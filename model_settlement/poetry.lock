@@ -11,7 +11,7 @@ six = "*"
 
 [[package]]
 name = "aiobotocore"
-version = "1.3.3"
+version = "1.4.0"
 description = "Async client for aws services using botocore and aiohttp"
 category = "main"
 optional = false
@@ -707,7 +707,7 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "1.1"
 python-versions = "~3.8"
-content-hash = "0a13cc26ec75f226b52ba437c9876509c2ea4a47999b2794a82e8410f41cd276"
+content-hash = "d37fcb05b5780afe6cc307bbc0dc6670cff29b0141ba79ca84223189e1626f36"
 
 [metadata.files]
 absl-py = [
@@ -715,7 +715,7 @@ absl-py = [
     {file = "absl_py-0.13.0-py3-none-any.whl", hash = "sha256:62bd4e248ddb19d81aec8f9446b407ff37c8175c2ba88266a7afa9b4ce4a333b"},
 ]
 aiobotocore = [
-    {file = "aiobotocore-1.3.3.tar.gz", hash = "sha256:b6bae95c55ef822d790bf8ebf6aed3d09b33e2817fa5f10e16a77028332963c2"},
+    {file = "aiobotocore-1.4.0.tar.gz", hash = "sha256:b61d7fbad0014f64bf6d24c272d8aaf7560178b147e36beebe7e9ee889fde216"},
 ]
 aiohttp = [
     {file = "aiohttp-3.7.4.post0-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:3cf75f7cdc2397ed4442594b935a11ed5569961333d49b7539ea741be2cc79d5"},
