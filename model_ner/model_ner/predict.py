@@ -1,30 +1,59 @@
 def predict(**kwargs):
-    import joblib
-    import json
-    import warnings
-    import pandas as pd
-    from typing import List
-    import boto3
-    import os
-    import re
-    import string
-    import random
-    import string
     import spacy
-    from model_ner.helpers import (download_folder_from_s3,
-                                   extract_entities_into_df)
 
 
-    # download_folder_from_s3("demo-temp-ner","test_spacy")
+    claim_id = kwargs["inputs"]["Claim Identifier"]
+    notes_desc = kwargs["inputs"]["Primary Diagnosis Desc"]
+
+    # spacy needs the model files in a particular folder structure. simpler to have it inside /data than download from S3 into multiple temp directories
+    ner_model = spacy.load("data")
+    docs = ner_model(notes_desc)
+    pred_dict = {"system_organ_site": [],
+                 "diagnosis_name": [],
+                 "direction": [],
+                 "acuity": [],
+                 "procedure": [],
+                 "test": [],
+                 "generic_name": [],
+                 "name": []}
+    for ent in docs.ents:
+        if ent.label_ == "SYSTEM_ORGAN_SITE":
+            pred_dict["system_organ_site"].append(ent.text)
+        elif ent.label_ == "DIRECTION":
+            pred_dict["direction"].append(ent.text)
+        elif ent.label_ == "DX_NAME":
+            pred_dict["diagnosis_name"].append(ent.text)
+        elif ent.label_ == "ACUITY":
+            pred_dict["acuity"].append(ent.text)
+        elif ent.label_ == "PROCEDURE_NAME":
+            pred_dict["procedure"].append(ent.text)
+        elif ent.label_ == "TEST_NAME":
+            pred_dict["test"].append(ent.text)
+        elif ent.label_ == "GENERIC_NAME":
+            pred_dict["generic_name"].append(ent.text)
+        elif ent.label_ == "NAME":
+            pred_dict["name"].append(ent.text)
+
+    return [
+        {"inputDataSource": f"{claim_id}:0", "entityId": claim_id,
+         "predictedResult": pred_dict}]
 
 
-
-    # df = pd.read_csv("s3://spr-barrel-qa-datasets/ner_test/synthetic_diagnosis_desc.csv")
-    claim = {'Claim Identifier': 1, 'Primary Diagnosis Desc': 'The patient was diagnosed with strain of flexor muscle, fascia and tendon of unspecified finger at wrist and hand level and showed symptoms of post-mixed pain, difficulty in falling from sitting or falling into a supine position, and low body temperature. The patient was discharged without a pulse or any treatment. A few hours after the initial exam the patient reported feeling strong pain in his right wrist and ankle, numbness in his left ankle, headache, and numbness in his right hand.'}
-    extract_entities_into_df(claim["Primary Diagnosis Desc"])
-    # row = df.to_dict(orient="records")[0]
-    # print(row)
-    # df = pd.DataFrame
-
-
-predict()
+# print(
+#     predict(
+#         model_name="NER_Model",
+#         artifact=[
+#         {
+#             "dataId": "5ad3e9c0-b248-4397-89a9-f44f3d3b7454",
+#             "dataName": "model_folder",
+#             "dataType": "artifact",
+#             "dataValue": "s3://demo-temp-ner/test_spacy",
+#             "dataValueType": "str"
+#         }
+#     ],
+#         inputs={
+#             "Primary Diagnosis Desc": "Primary Diagnosis Desc': 'Unilateral primary osteoarthritis, right knee",
+#             "Claim Identifier": "GDC-46016"
+#         },
+#     )
+# )

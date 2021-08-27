@@ -14,7 +14,10 @@ classifiers = [
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: Implementation :: CPython",
 ]
-
+packages = [
+    { include = "model_ner" }
+]
+include = ["model_ner/data/*"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
