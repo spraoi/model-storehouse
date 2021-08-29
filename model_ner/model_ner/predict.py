@@ -1,12 +1,16 @@
 def predict(**kwargs):
     import spacy
+    import pkg_resources
 
 
     claim_id = kwargs["inputs"]["Claim Identifier"]
     notes_desc = kwargs["inputs"]["Primary Diagnosis Desc"]
 
     # spacy needs the model files in a particular folder structure. simpler to have it inside /data than download from S3 into multiple temp directories
-    ner_model = spacy.load("data")
+
+    model = pkg_resources.resource_filename(pkg_resources.Requirement.parse("model_ner"), "model_ner/data")
+
+    ner_model = spacy.load(model)
     docs = ner_model(notes_desc)
     pred_dict = {"system_organ_site": [],
                  "diagnosis_name": [],
