@@ -1,0 +1,1 @@
+{"lang":"en","name":"model","version":"0.0.0","spacy_version":">=2.2.0","description":"","author":"","email":"","url":"","license":"","vectors":{"width":0,"vectors":0,"keys":0,"name":"spacy_pretrained_vectors"},"pipeline":["ner"],"labels":{"ner":["ACUITY","BRAND_NAME","DIRECTION","DX_NAME","GENERIC_NAME","NAME","PROCEDURE_NAME","SYSTEM_ORGAN_SITE","TEST_NAME","TREATMENT_NAME"]}}
