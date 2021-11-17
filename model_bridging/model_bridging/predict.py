@@ -6,7 +6,7 @@ def predict(**kwargs):
         get_date_diff,
         add_emp_tenure_to_df,
         get_bucket_and_key_from_s3_uri,
-        download_obj_from_s3
+        download_model_from_s3
     )
     from nltk.corpus import stopwords
     from nltk.stem.snowball import SnowballStemmer
@@ -50,7 +50,7 @@ def predict(**kwargs):
         if artifact.get("dataName") == "combined_artifacts":
             model_bucket, model_key = get_bucket_and_key_from_s3_uri(artifact.get("dataValue"))
 
-    artifacts = download_obj_from_s3(model_bucket, model_key)
+    artifacts = download_model_from_s3(model_bucket, model_key)
 
 
 

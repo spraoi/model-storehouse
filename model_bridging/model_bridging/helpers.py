@@ -68,7 +68,7 @@ class CategoricalGrouper:
                 "The categorical grouper needs to be fit before calling .transform()"
             )
 
-def download_obj_from_s3(bucket_name, key):
+def download_model_from_s3(bucket_name, key):
     bucket = boto3.resource("s3").Bucket(bucket_name)
     with tempfile.NamedTemporaryFile() as fp:
         bucket.download_fileobj(key, fp)
