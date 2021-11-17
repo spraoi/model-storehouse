@@ -74,3 +74,4 @@ def download_model_from_s3(bucket_name, key):
         bucket.download_fileobj(key, fp)
         loaded_model = joblib.load(fp.name)
     return loaded_model
+
