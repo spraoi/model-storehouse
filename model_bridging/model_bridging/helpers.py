@@ -5,6 +5,9 @@ import joblib
 import tempfile
 from typing import List
 
+def get_bucket_and_key_from_s3_uri(uri):
+    bucket, key = uri.split("/", 2)[-1].split("/", 1)
+    return bucket, key
 
 def tokenize_pd_code(df):
 
@@ -28,7 +31,7 @@ def add_emp_tenure_to_df(df):
     
     return df.drop("InsuredHireDate", axis=1)
 
-
+#joblib needs this class
 class CategoricalGrouper:
 
     """we are fitting the categorical grouper on a reference data
@@ -67,11 +70,7 @@ class CategoricalGrouper:
 
 def download_obj_from_s3(bucket_name, key):
     bucket = boto3.resource("s3").Bucket(bucket_name)
-    print(bucket_name, key)
     with tempfile.NamedTemporaryFile() as fp:
         bucket.download_fileobj(key, fp)
         loaded_model = joblib.load(fp.name)
     return loaded_model
-
-
-# download_obj_from_s3("spr-ml-artifacts","dev/MLMR_Bridging/artifacts/all_artifacts_10-05-2021.joblib")
