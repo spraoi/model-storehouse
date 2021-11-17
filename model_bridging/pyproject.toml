@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "model_std"
+name = "model_bridging"
 version = "0.1.0"
 description = "Model Bridging"
 authors = ["Teja <teja@spraoi.ai>"]
