@@ -22,10 +22,10 @@ botocore = "1.*"
 pandas = "*"
 numpy = "*"
 joblib = "*"
-tensorflow = "2.5.*"
+tensorflow = "2.7.*"
 xgboost = "*"
 scikit-learn = "*"  # needed though it's not obvious in the code
-fsspec = "*"
+s3fs = "*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
