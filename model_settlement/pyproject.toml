@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "model_settlement"
-version = "0.1.5"
+version = "0.1.6"
 description = "Model Settlement"
 authors = ["Teja <teja@spraoi.ai>"]
 maintainers = [
@@ -24,7 +24,7 @@ numpy = "1.*"
 joblib = "*"
 tensorflow = "2.*"
 xgboost = "1.*"
-
+scikit-learn = "*"  # needed though it's not obvious in the code
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
