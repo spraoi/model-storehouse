@@ -270,10 +270,12 @@ def predict(**kwargs):
     return [
         {
             "inputDataSource": f"{dataset_id}:0",
-            "entityId": f"{dataset_id}:{list(pr.keys())[0]}",
-            "predictedResult": pr,
+            "entityId": f"{dataset_id}",
+            # "entityId": f"{dataset_id}:{list(pr.keys())[0]}",
+            "predictedResult": prediction_list,
+            # "predictedResult": pr,
         }
-        for pr in prediction_list
+        # for pr in prediction_list
     ]
 
 
