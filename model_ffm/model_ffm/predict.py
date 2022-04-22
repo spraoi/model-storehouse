@@ -8,7 +8,7 @@ def predict(**kwargs):
     import pkg_resources
     import re
 
-    dataset_id = kwargs.get('inputs').get('datasetId')
+    dataset_id = kwargs.get("inputs").get("datasetId")
 
     if not kwargs.get("inputs").get("columns"):
         return [
@@ -237,21 +237,35 @@ def predict(**kwargs):
     confidences = np.hstack(
         (prod_confidence, header_confidence, entity_confidence)
     ).tolist()
-    print(f"{pred_labels=}")
+    # print(f"{pred_labels=}")
+
     # Apply new rule for entity 04/22/2022
     # if predicted entity is UNK and predicted label is NOT GroupNumber or AccountNumber
     # then set predicted entity to Primary
-    new_labels = [[p[0], p[1], "Primary" if p[2] == "UNK" and p[1] not in ["GroupNumber", "AccountNumber"] else p[2]]
-                  for p in pred_labels]  # noqa
-    res = [[(a, b) for a, b in zip(ll, cl)] for ll, cl in zip(new_labels, confidences)]  # noqa
-    print(f"{res=}")
+    new_labels = [
+        [
+            p[0],
+            p[1],
+            "Primary"
+            if p[2] == "UNK" and p[1] not in ["GroupNumber", "AccountNumber"]
+            else p[2],
+        ]
+        for p in pred_labels  # noqa
+    ]
+    res = [
+        [(a, b) for a, b in zip(ll, cl)] for ll, cl in zip(new_labels, confidences)  # noqa
+    ]
+    # print(f"{res=}")
 
     pred_list = [{entity: prediction} for entity, prediction in zip(all_columns, res)]
     pattern = re.compile("^blank_header_\d+$")
     unknown_triplet = [("UNK", 1.0), ("UNK", 1.0), ("UNK", 1.0)]
-    prediction_list = [{header: unknown_triplet if pattern.match(header) else pred}
-                       for item in pred_list for header, pred in item.items()]
-    print(f"{prediction_list=}")
+    prediction_list = [
+        {header: unknown_triplet if pattern.match(header) else pred}
+        for item in pred_list
+        for header, pred in item.items()
+    ]
+    # print(f"{prediction_list=}")
 
     return [
         {
@@ -273,13 +287,13 @@ if __name__ == "__main__":
         "Member_Information_Employee_Benefit_Class",
         "Member_Information_Last_Name",
         "blank_header_1",
-        "blank_header_20"
+        "blank_header_20",
     ]
     # columns = []
     results = predict(
         model_name="model_ffm",
         artifacts=["data/bert_wp_tok_updated_v2.joblib"],
         model_path="data/FFM_new_prod_labels_v2.h5",
-        inputs={"datasetId": "spr:dataset_id", "columns": columns}
+        inputs={"datasetId": "spr:dataset_id", "columns": columns},
     )
     print(f"{results=}")
