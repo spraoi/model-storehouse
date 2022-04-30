@@ -26,6 +26,7 @@ numpy = "~1.19"
 inflection = "~0.5"
 joblib = "~1.0"
 tokenizers = "~0.10"
+werkzeug = "0.*"
 
 
 [build-system]
