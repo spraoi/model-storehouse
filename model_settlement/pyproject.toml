@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "model_settlement"
-version = "0.1.10"
+version = "0.1.11"
 description = "Model Settlement"
 authors = ["Teja <teja@spraoi.ai>"]
 maintainers = [
@@ -29,6 +29,8 @@ tensorflow = "~2.5"
 scikit-learn = "~0.24"
 xgboost = "~1.2"
 wrapt = "1.12.1"
+# pin werkzeug until tensorflow is removed or Airflow is upgraded
+werkzeug = "0.*"
 
 
 [build-system]
