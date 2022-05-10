@@ -1,12 +1,11 @@
 def predict(**kwargs):
 
     import numpy as np
-    import tensorflow as tf
-    from tensorflow.keras.preprocessing.sequence import pad_sequences
     from inflection import humanize, underscore
     import joblib
     import pkg_resources
     import re
+    import onnxruntime
 
     dataset_id = kwargs.get("inputs").get("datasetId")
 
@@ -18,6 +17,10 @@ def predict(**kwargs):
                 "predictedResult": [],
             }
         ]
+
+    def padarray(A):
+      t = 16 - len(A)
+      return np.pad(A, pad_width=(t, 0), mode='constant')
 
     # Static Mappings for the Model
     model_config = {
@@ -184,13 +187,19 @@ def predict(**kwargs):
 
     # load wordPiece tokenizer
     tokenizer = pkg_resources.resource_stream(
-        "model_ffm", "data/bert_wp_tok_updated_v2.joblib"
+        "model_ffm", "data/p2_tokenizer_BERT_WP_v2.2.1.joblib"
     )
     bert_wp_loaded = joblib.load(tokenizer)
 
     # load trained model
-    fp = pkg_resources.resource_filename("model_ffm", "data/FFM_new_prod_labels_v2.h5")
-    loaded_model = tf.keras.models.load_model(fp)
+    # fp = pkg_resources.resource_filename("model_ffm", "data/ffm_model_torch_v2.2.1.onnx")
+    # loaded_model = tf.keras.models.load_model(fp)
+    loaded_model = onnxruntime.InferenceSession("./data/ffm_model_torch_v2.2.1.onnx")
+
+    input_name = loaded_model.get_inputs()[0].name
+    label_name1 = loaded_model.get_outputs()[0].name
+    label_name2 = loaded_model.get_outputs()[1].name
+    label_name3 = loaded_model.get_outputs()[2].name
 
     # load categories:index mappings
     inv_prod_dict = model_config.get("label_mapping").get("product_map")
@@ -211,26 +220,58 @@ def predict(**kwargs):
         processed_cols.append(column)
         token_ids_test.append(bert_wp_loaded.encode(column).ids)
 
-    test_tokens = pad_sequences(
-        token_ids_test,
-        padding=pad,
-        value=bert_wp_loaded.get_vocab()["[PAD]"],
-        maxlen=max_seq_len,
-    )
+    # test_tokens = pad_sequences(
+    #     token_ids_test,
+    #     padding=pad,
+    #     value=bert_wp_loaded.get_vocab()["[PAD]"],
+    #     maxlen=max_seq_len,
+    # )
+    pred = []
 
-    predictions_test = loaded_model.predict(test_tokens)
+    for A in range(len(token_ids_test)):
+      t = max_seq_len - len(token_ids_test[A])
+      if t >= 0:
+        i = np.pad(token_ids_test[A], pad_width=(t, 0), mode='constant').astype(np.int32)
+      else:
+        i = np.array(token_ids_test[A][0:16]).astype(np.int32)
+      i = i.reshape(1, -1)
+      pred.append(loaded_model.run([label_name1, label_name2, label_name3],
+                                    {input_name: i}))
+    # predictions_test = loaded_model.predict(test_tokens)
+    predictions_test = []
+    predictions_test_0 = []
+    predictions_test_1 = []
+    predictions_test_2 = []
 
-    p1_test = np.argmax(predictions_test[0], axis=1)
-    p2_test = np.argmax(predictions_test[1], axis=1)
-    p3_test = np.argmax(predictions_test[2], axis=1)
+    for i in range(len(token_ids_test)):
+      predictions_test_0.append(pred[i][0])
+      predictions_test_1.append(pred[i][1])
+      predictions_test_2.append(pred[i][2])
+
+    predictions_test.append(predictions_test_0)
+    predictions_test.append(predictions_test_1)
+    predictions_test.append(predictions_test_2)
+
+    r1_len = len(all_columns)
+
+    p1_test = np.argmax(np.array(predictions_test[0]).reshape(r1_len,-1), axis=1)
+    p2_test = np.argmax(np.array(predictions_test[1]).reshape(r1_len,-1), axis=1)
+    p3_test = np.argmax(np.array(predictions_test[2]).reshape(r1_len,-1), axis=1)
 
     prod_label = np.array([prod_dict[x] for x in p1_test]).reshape((-1, 1))
     header_label = np.array([head_dict[x] for x in p2_test]).reshape((-1, 1))
     entity_label = np.array([party_dict[x] for x in p3_test]).reshape((-1, 1))
 
-    prob_1 = tf.nn.softmax(predictions_test[0], axis=1)
-    prob_2 = tf.nn.softmax(predictions_test[1], axis=1)
-    prob_3 = tf.nn.softmax(predictions_test[2], axis=1)
+    softmax_layer = onnxruntime.InferenceSession("./data/softmax.onnx")
+    input_name_x = softmax_layer.get_inputs()[0].name
+    label_name_x = softmax_layer.get_outputs()[0].name
+
+    prob_1 = softmax_layer.run([label_name_x],
+                    {input_name_x: np.array(predictions_test[0]).reshape(r1_len,-1)})[0]
+    prob_2 = softmax_layer.run([label_name_x],
+                    {input_name_x: np.array(predictions_test[1]).reshape(r1_len,-1)})[0]
+    prob_3 = softmax_layer.run([label_name_x],
+                    {input_name_x: np.array(predictions_test[2]).reshape(r1_len,-1)})[0]
 
     prod_confidence = np.array(
         [round(float(x), 4) for x in list(np.max(prob_1, axis=1))]
@@ -276,7 +317,6 @@ def predict(**kwargs):
         for header, pred in item.items()
     ]
     # print(f"{prediction_list=}")
-
     return [
         {
             "inputDataSource": f"{dataset_id}:0",
