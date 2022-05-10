@@ -19,8 +19,8 @@ def predict(**kwargs):
         ]
 
     def padarray(A):
-      t = 16 - len(A)
-      return np.pad(A, pad_width=(t, 0), mode='constant')
+        t = 16 - len(A)
+        return np.pad(A, pad_width=(t, 0), mode="constant")
 
     # Static Mappings for the Model
     model_config = {
@@ -229,14 +229,17 @@ def predict(**kwargs):
     pred = []
 
     for A in range(len(token_ids_test)):
-      t = max_seq_len - len(token_ids_test[A])
-      if t >= 0:
-        i = np.pad(token_ids_test[A], pad_width=(t, 0), mode='constant').astype(np.int32)
-      else:
-        i = np.array(token_ids_test[A][0:16]).astype(np.int32)
-      i = i.reshape(1, -1)
-      pred.append(loaded_model.run([label_name1, label_name2, label_name3],
-                                    {input_name: i}))
+        t = max_seq_len - len(token_ids_test[A])
+        if t >= 0:
+            i = np.pad(token_ids_test[A], pad_width=(t, 0), mode="constant").astype(
+                np.int32
+            )
+        else:
+            i = np.array(token_ids_test[A][0:16]).astype(np.int32)
+        i = i.reshape(1, -1)
+        pred.append(
+            loaded_model.run([label_name1, label_name2, label_name3], {input_name: i})
+        )
     # predictions_test = loaded_model.predict(test_tokens)
     predictions_test = []
     predictions_test_0 = []
@@ -244,9 +247,9 @@ def predict(**kwargs):
     predictions_test_2 = []
 
     for i in range(len(token_ids_test)):
-      predictions_test_0.append(pred[i][0])
-      predictions_test_1.append(pred[i][1])
-      predictions_test_2.append(pred[i][2])
+        predictions_test_0.append(pred[i][0])
+        predictions_test_1.append(pred[i][1])
+        predictions_test_2.append(pred[i][2])
 
     predictions_test.append(predictions_test_0)
     predictions_test.append(predictions_test_1)
@@ -254,9 +257,9 @@ def predict(**kwargs):
 
     r1_len = len(all_columns)
 
-    p1_test = np.argmax(np.array(predictions_test[0]).reshape(r1_len,-1), axis=1)
-    p2_test = np.argmax(np.array(predictions_test[1]).reshape(r1_len,-1), axis=1)
-    p3_test = np.argmax(np.array(predictions_test[2]).reshape(r1_len,-1), axis=1)
+    p1_test = np.argmax(np.array(predictions_test[0]).reshape(r1_len, -1), axis=1)
+    p2_test = np.argmax(np.array(predictions_test[1]).reshape(r1_len, -1), axis=1)
+    p3_test = np.argmax(np.array(predictions_test[2]).reshape(r1_len, -1), axis=1)
 
     prod_label = np.array([prod_dict[x] for x in p1_test]).reshape((-1, 1))
     header_label = np.array([head_dict[x] for x in p2_test]).reshape((-1, 1))
@@ -266,12 +269,18 @@ def predict(**kwargs):
     input_name_x = softmax_layer.get_inputs()[0].name
     label_name_x = softmax_layer.get_outputs()[0].name
 
-    prob_1 = softmax_layer.run([label_name_x],
-                    {input_name_x: np.array(predictions_test[0]).reshape(r1_len,-1)})[0]
-    prob_2 = softmax_layer.run([label_name_x],
-                    {input_name_x: np.array(predictions_test[1]).reshape(r1_len,-1)})[0]
-    prob_3 = softmax_layer.run([label_name_x],
-                    {input_name_x: np.array(predictions_test[2]).reshape(r1_len,-1)})[0]
+    prob_1 = softmax_layer.run(
+        [label_name_x],
+        {input_name_x: np.array(predictions_test[0]).reshape(r1_len, -1)},
+    )[0]
+    prob_2 = softmax_layer.run(
+        [label_name_x],
+        {input_name_x: np.array(predictions_test[1]).reshape(r1_len, -1)},
+    )[0]
+    prob_3 = softmax_layer.run(
+        [label_name_x],
+        {input_name_x: np.array(predictions_test[2]).reshape(r1_len, -1)},
+    )[0]
 
     prod_confidence = np.array(
         [round(float(x), 4) for x in list(np.max(prob_1, axis=1))]
