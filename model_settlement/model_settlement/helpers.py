@@ -3,8 +3,8 @@ import numpy as np
 import boto3
 import joblib
 import tempfile
-
-from tensorflow.keras.models import load_model
+import onnxruntime
+# from tensorflow.keras.models import load_model
 
 
 def resolve_formatting(df, date_cols, numeric_cols):
@@ -44,7 +44,6 @@ def add_policy_tenure_to_df(df):
     return df
 
 
-
 def add_prognosis_days_to_df(df):
     """
     returns a df with prognosis days column appeneded
@@ -61,8 +60,6 @@ def add_prognosis_days_to_df(df):
     )
     df.loc[df[col] <= 0, col] = np.nan
     return df
-
-
 
 
 def tokenize_pd_code(df):
@@ -140,28 +137,42 @@ def clean_pd_category(df):
     df.loc[df[PRIMARY_DIAG_CAT] == "", PRIMARY_DIAG_CAT] = "unknown"
     df.loc[df[PRIMARY_DIAG_CAT].isnull(), PRIMARY_DIAG_CAT] = "unknown"
     df.loc[
-        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the circulatory system"), PRIMARY_DIAG_CAT
+        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the circulatory system"),
+        PRIMARY_DIAG_CAT,
     ] = "disease_circulatory_system"
     df.loc[
-        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the eye & adnexa"), PRIMARY_DIAG_CAT
+        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the eye & adnexa"),
+        PRIMARY_DIAG_CAT,
     ] = "disease_eye_adnexa"
     df.loc[
-        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the ear & mastoid process"), PRIMARY_DIAG_CAT
+        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the ear & mastoid process"),
+        PRIMARY_DIAG_CAT,
     ] = "disease_ear_mastoid"
     df.loc[
-        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the musculoskeletal system & connectiv"),
+        df[PRIMARY_DIAG_CAT].str.startswith(
+            "diseases of the musculoskeletal system & connectiv"
+        ),
         PRIMARY_DIAG_CAT,
     ] = "disease_respiratory_system"
     df.loc[
-        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the respiratory system"), PRIMARY_DIAG_CAT
+        df[PRIMARY_DIAG_CAT].str.startswith("diseases of the respiratory system"),
+        PRIMARY_DIAG_CAT,
     ] = "disease_musculoskeletal"
     df.loc[
-        df[PRIMARY_DIAG_CAT].str.startswith("injury, poisoning & certain other consequences of"), PRIMARY_DIAG_CAT
+        df[PRIMARY_DIAG_CAT].str.startswith(
+            "injury, poisoning & certain other consequences of"
+        ),
+        PRIMARY_DIAG_CAT,
     ] = "injury_poisonining"
     df.loc[
-        df[PRIMARY_DIAG_CAT].str.startswith("mental, behavioral & neurodevelopmental disorders"), PRIMARY_DIAG_CAT
+        df[PRIMARY_DIAG_CAT].str.startswith(
+            "mental, behavioral & neurodevelopmental disorders"
+        ),
+        PRIMARY_DIAG_CAT,
     ] = "disease_mental_neuro"
-    df.loc[df[PRIMARY_DIAG_CAT].str.startswith("neoplasms"), PRIMARY_DIAG_CAT] = "neoplasms"
+    df.loc[
+        df[PRIMARY_DIAG_CAT].str.startswith("neoplasms"), PRIMARY_DIAG_CAT
+    ] = "neoplasms"
     df.loc[~df[PRIMARY_DIAG_CAT].isin(PD_CAT), PRIMARY_DIAG_CAT] = "others"
 
     return df
@@ -413,7 +424,9 @@ def pre_process_pd_desc(df):
     inter_vertebral_dis = [1 if x else 0 for x in inter_vertebral_dis]
     df.loc[:, "medical_cond_comb_intervertebral disease"] = inter_vertebral_dis
 
-    cerebrovascular_disease = list(df[PRIMARY_DIAG_DESC].str.contains("cerebrovascular"))
+    cerebrovascular_disease = list(
+        df[PRIMARY_DIAG_DESC].str.contains("cerebrovascular")
+    )
     cerebrovascular_disease = [1 if x else 0 for x in cerebrovascular_disease]
     df.loc[:, "medical_cond_comb_cerebrovascular disease"] = cerebrovascular_disease
 
@@ -458,7 +471,8 @@ def pre_process_pd_desc(df):
     df.loc[:, "sys_organ_comb_ankle"] = ankle
 
     thoracic_region = list(
-        (df[PRIMARY_DIAG_DESC].str.contains("thorac")) | (df[PRIMARY_DIAG_DESC].str.contains("thorax"))
+        (df[PRIMARY_DIAG_DESC].str.contains("thorac"))
+        | (df[PRIMARY_DIAG_DESC].str.contains("thorax"))
     )
     thoracic_region = [1 if x else 0 for x in thoracic_region]
     df.loc[:, "sys_organ_comb_thoracic region"] = thoracic_region
@@ -650,7 +664,7 @@ def download_obj_from_s3(bucket_name, key, artifact_type):
     if artifact_type == "dl_model":
         with tempfile.NamedTemporaryFile(suffix=".h5") as fp:
             bucket.download_fileobj(key, fp)
-            return load_model(fp.name)
+            return onnxruntime.InferenceSession(fp.name)
 
     elif artifact_type == "xgb_model":
         with tempfile.NamedTemporaryFile(suffix=".joblib") as fp:
@@ -658,7 +672,7 @@ def download_obj_from_s3(bucket_name, key, artifact_type):
             return joblib.load(fp.name)
     else:
         with tempfile.TemporaryDirectory() as dirpath:
-            #tempfile throws an EOFError for scaler. Use normal file inside temp directory
+            # tempfile throws an EOFError for scaler. Use normal file inside temp directory
             with open(f"{dirpath}/scaler.joblib", "wb") as file_data:
                 bucket.download_fileobj(key, file_data)
             file_data.close()
