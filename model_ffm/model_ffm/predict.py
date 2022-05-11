@@ -194,7 +194,8 @@ def predict(**kwargs):
     # load trained model
     # fp = pkg_resources.resource_filename("model_ffm", "data/ffm_model_torch_v2.2.1.onnx")
     # loaded_model = tf.keras.models.load_model(fp)
-    loaded_model = onnxruntime.InferenceSession("./data/ffm_model_torch_v2.2.1.onnx")
+    fp = pkg_resources.resource_filename("model_ffm", "data/ffm_model_torch_v2.2.1.onnx")
+    loaded_model = onnxruntime.InferenceSession(fp)
 
     input_name = loaded_model.get_inputs()[0].name
     label_name1 = loaded_model.get_outputs()[0].name
@@ -265,7 +266,8 @@ def predict(**kwargs):
     header_label = np.array([head_dict[x] for x in p2_test]).reshape((-1, 1))
     entity_label = np.array([party_dict[x] for x in p3_test]).reshape((-1, 1))
 
-    softmax_layer = onnxruntime.InferenceSession("./data/softmax.onnx")
+    fp_1 = pkg_resources.resource_filename("model_ffm", "data/softmax.onnx")
+    softmax_layer = onnxruntime.InferenceSession(fp_1)
     input_name_x = softmax_layer.get_inputs()[0].name
     label_name_x = softmax_layer.get_outputs()[0].name
 
