@@ -34,7 +34,6 @@ def predict(**kwargs):
         elif artifact.get("dataName") == "template_artifact":
             template_key = get_bucket_and_key_from_s3_uri(artifact.get("dataValue"))[1]
 
-
     loaded_dl_model = download_obj_from_s3(model_bucket, dl_model_key, "dl_model")
 
     loaded_scaler = download_obj_from_s3(model_bucket, scaler_key, "scaler")
@@ -43,19 +42,27 @@ def predict(**kwargs):
 
     loaded_template = pd.read_csv(f"s3://{model_bucket}/{template_key}")
 
+    input_name = loaded_dl_model.get_inputs()[0].name
+    label_name = loaded_dl_model.get_outputs()[0].name
+
     data = pd.DataFrame([kwargs.get("inputs").get("claim")])
 
     data = data.replace(
         r"^\s*$", np.nan, regex=True
     )  # for replacing empty strings with nans ""
 
-
     settlement = pre_process_data(data)
     settlement = add_policy_tenure_to_df(settlement)
-    settlement["days_to_report"] = get_date_diff(settlement["Loss Date"], settlement["Received Date"], interval="D")
-    settlement["emp_tenure"] = get_date_diff(settlement["Insured Hire Date"], settlement["Loss Date"], interval="D")
+    settlement["days_to_report"] = get_date_diff(
+        settlement["Loss Date"], settlement["Received Date"], interval="D"
+    )
+    settlement["emp_tenure"] = get_date_diff(
+        settlement["Insured Hire Date"], settlement["Loss Date"], interval="D"
+    )
     settlement = add_prognosis_days_to_df(settlement)
-    settlement["days_to_first_payment"] = get_date_diff(settlement["Loss Date"], settlement["First Payment From Date"], interval="D")
+    settlement["days_to_first_payment"] = get_date_diff(
+        settlement["Loss Date"], settlement["First Payment From Date"], interval="D"
+    )
     settlement = settlement.select_dtypes(exclude=["datetime64"])
     settlement = scale_features(settlement, loaded_scaler)
     settlement.drop(["Duration Months"], axis=1, inplace=True)
@@ -86,7 +93,9 @@ def predict(**kwargs):
 
     # dl model prediction followed by xgb...
     best_iteration = loaded_xgb.get_booster().best_ntree_limit
-    p1 = loaded_dl_model.predict(test_X.values)
+    p1 = loaded_dl_model.run(
+        [label_name], {input_name: test_X.to_numpy(dtype="float32")}
+    )[0]
     p1 = posterior_correction(
         P1_ORIG, P1_TRAIN, p1
     )  # applying probability correction for dnn preds
@@ -115,12 +124,15 @@ def predict(**kwargs):
     ].copy()
     payload_data.columns = ["claimNumber", "predictedProbability", "predictedValue"]
 
-
     prediction_json = json.loads(payload_data.to_json(orient="records"))
     predicted_claim = prediction_json[0] if prediction_json else None
     return [
-        {"inputDataSource": f"{predicted_claim.get('claimNumber')}:0", "entityId": predicted_claim.get("claimNumber"),
-         "predictedResult": predicted_claim}]
+        {
+            "inputDataSource": f"{predicted_claim.get('claimNumber')}:0",
+            "entityId": predicted_claim.get("claimNumber"),
+            "predictedResult": predicted_claim,
+        }
+    ]
 
 
 # print(
@@ -173,7 +185,7 @@ def predict(**kwargs):
 #             "dataId": "1007bf57-66fc-4f19-bc1b-fce62f5e34b0",
 #             "dataName": "dl_model_artifact",
 #             "dataType": "artifact",
-#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/dl_model_2021-06-28.h5",
+#             "dataValue": "s3://spr-ml-artifacts/prod/MLMR_settlement/artifacts/settlement_model.onnx",
 #             "dataValueType": "str"
 #         }
 #     ],
@@ -270,5 +282,3 @@ def predict(**kwargs):
 #         },
 #     )
 # )
-
-
