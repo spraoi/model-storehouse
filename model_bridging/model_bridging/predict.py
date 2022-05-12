@@ -10,11 +10,6 @@ def predict(**kwargs):
     from nltk.tokenize import WhitespaceTokenizer
     import json
     import nltk
-    # import model_bridging.helpers as helpers
-    # import sys
-
-    # sys.modules['helpers'] = helpers
-
 
     nltk.download("stopwords")
 
@@ -44,7 +39,6 @@ def predict(**kwargs):
         )
 
         return df.drop("InsuredHireDate", axis=1)
-
 
     def download_model_from_s3(bucket_name, key):
         bucket = boto3.resource("s3").Bucket(bucket_name)
@@ -225,7 +219,7 @@ def predict(**kwargs):
 #         "dataId": "55dcc659-d0c5-42aa-b9bf-a0325a2997b9",
 #         "dataName": "combined_artifacts",
 #         "dataType": "artifact",
-#         "dataValue": "s3://spr-ml-artifacts/dev/MLMR_Bridging/artifacts/all_artifacts_10-05-2021.joblib",
+#         "dataValue": "s3://spr-ml-artifacts/prod/MLMR_bridging/artifacts/artifacts_bridging.joblib",
 #         "dataValueType": "str"
 #     }
 # ],
