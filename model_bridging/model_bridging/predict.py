@@ -40,41 +40,6 @@ def predict(**kwargs):
 
         return df.drop("InsuredHireDate", axis=1)
 
-    # joblib needs this class
-    class CategoricalGrouper:
-
-        """we are fitting the categorical grouper on a reference data
-        using min_freq, which means all the low-frequency categories are
-        pushed into a garbage or OOV category"""
-
-        def __init__(self, min_freq):
-            self.min_freq = min_freq
-            self.is_fitted = False
-
-        def fit(self, X, categorical: List):
-            _non_oov_dict = dict()
-            for col in categorical:
-                _df = pd.DataFrame(X[col].value_counts()).reset_index(drop=False)
-                _df.columns = ["index", "counts"]
-                non_oov = list(_df.loc[_df["counts"] >= self.min_freq, "index"])
-                _non_oov_dict[col] = non_oov
-            #             X.loc[~X[col].isin(non_oov), col] = 'OOV'
-            self._non_oov_dict = _non_oov_dict
-            self.is_fitted = True
-            return None
-
-        def transform(self, X, categorical: List):
-            if self.is_fitted:
-                for col in categorical:
-                    non_oov = self._non_oov_dict[col]
-                    X.loc[~X[col].isin(non_oov), col] = "OOV"
-
-                return X
-            else:
-                raise ValueError(
-                    "The categorical grouper needs to be fit before calling .transform()"
-                )
-
     def download_model_from_s3(bucket_name, key):
         bucket = boto3.resource("s3").Bucket(bucket_name)
         with tempfile.NamedTemporaryFile() as fp:
@@ -254,7 +219,7 @@ def predict(**kwargs):
 #         "dataId": "55dcc659-d0c5-42aa-b9bf-a0325a2997b9",
 #         "dataName": "combined_artifacts",
 #         "dataType": "artifact",
-#         "dataValue": "s3://spr-ml-artifacts/dev/MLMR_Bridging/artifacts/all_artifacts_10-05-2021.joblib",
+#         "dataValue": "s3://spr-ml-artifacts/prod/MLMR_bridging/artifacts/artifacts_bridging.joblib",
 #         "dataValueType": "str"
 #     }
 # ],
