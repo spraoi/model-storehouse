@@ -10,6 +10,11 @@ def predict(**kwargs):
     from nltk.tokenize import WhitespaceTokenizer
     import json
     import nltk
+    import helpers
+    import sys
+
+    sys.modules['helpers'] = helpers
+
 
     nltk.download("stopwords")
 
