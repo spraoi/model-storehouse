@@ -12,6 +12,7 @@ def predict(**kwargs):
     import pkg_resources
     import boto3
     import en_core_web_sm
+    import nltk
     from nltk import tokenize
     import pandas as pd
     import profanity_check as pfc
