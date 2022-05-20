@@ -109,11 +109,12 @@ def predict(**kwargs):
         pkg_resources.Requirement.parse("model_legal_discovery"),
         "model_legal_discovery/nltk_data",
     )
-    nltk.data.path.append(ntlk_data_loation)
 
     # populate folders using data from s3
     download_s3_folder("legal-disc", "nltk_data/", ntlk_data_loation)
     download_s3_folder("legal-disc", "transformers/", transformers_data)
+    
+    nltk.data.path.append(ntlk_data_loation)
 
     os.putenv("NLTK_DATA", ntlk_data_loation)
 
