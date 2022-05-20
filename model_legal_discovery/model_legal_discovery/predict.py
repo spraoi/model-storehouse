@@ -115,7 +115,6 @@ def predict(**kwargs):
     download_s3_folder("legal-disc", "transformers/", transformers_data)
     
     # nltk.data.path.append(ntlk_data_loation + "/")
-    nltk.download('punkt')
     os.putenv("NLTK_DATA", ntlk_data_loation)
 
     tokenizer_load = AutoTokenizer.from_pretrained(transformers_data)
