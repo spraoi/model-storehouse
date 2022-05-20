@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "model_legal_discovery"
-version = "0.1.0"
+version = "0.1.1"
 description = "Model Legal Discovery"
 authors = ["Jason DeCorte <Jason.DeCorte@FINEOS.com>"]
 packages = [
@@ -14,13 +14,15 @@ include = [
 [tool.poetry.dependencies]
 python = "^3.8"
 click = ">=7.1,<7.2"
-spacy = "*"
-torch = "*"
-PyPDF2 = "*"
-transformers = "*"
-nltk = "*"
-sklearn = "*"
-alt_profanity_check = "*"
+boto3 = "1.21.21"
+spacy = "~3.1"
+torch = "~1.11"
+PyPDF2 = "1.*"
+transformers = "~4.19"
+nltk = "~3.7"
+scikit-learn = "~1.0"
+numpy = "~1.22"
+alt_profanity_check = "1.*"
 en_core_web_sm = {url = "https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.1.0/en_core_web_sm-3.1.0-py3-none-any.whl"}
 
 [tool.poetry.dev-dependencies]
