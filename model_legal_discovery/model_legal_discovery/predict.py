@@ -99,7 +99,7 @@ def predict(**kwargs):
         result = model(token_list)
         return int(torch.argmax(result.logits)) - 2
 
-    # setup location for NLTK data
+    # setup location  data
 
     transformers_data = pkg_resources.resource_filename(
         pkg_resources.Requirement.parse("model_legal_discovery"),
@@ -111,11 +111,10 @@ def predict(**kwargs):
     )
 
     # populate folders using data from s3
-    # download_s3_folder("legal-disc", "nltk_data/", ntlk_data_loation)
     download_s3_folder("legal-disc", "transformers/", transformers_data)
-    
+
+    # add search path to nltk
     nltk.data.path.append(ntlk_data_loation)
-    # os.putenv("NLTK_DATA", ntlk_data_loation)
 
     tokenizer_load = AutoTokenizer.from_pretrained(transformers_data)
     model_load = AutoModelForSequenceClassification.from_pretrained(transformers_data)
@@ -277,7 +276,7 @@ def predict(**kwargs):
 #             "bucket": 'spr-barrel-dev-nextra-documents',
 #             "keyPath": 'upload/spr:bz:case::0ea2ab20-f6d8-4326-86a5-7cba526a0fcc/1629126547439/doc3_1.pdf',
 #             "createdAt": 1626960092552,
-#             "updatedAt": 1626960092552,
+#             "updatedAt": 1626960092552
 #           },
 #           {
 #             "documentId": 'spr:bz:document::20007992-6cde-4cbe-b6cd-8e77d684819a',
@@ -286,39 +285,9 @@ def predict(**kwargs):
 #             "bucket": 'spr-barrel-dev-nextra-documents',
 #             "keyPath": 'jd-test/SentimentDocument1_Redacted.pdf',
 #             "createdAt": 1626960092552,
-#             "updatedAt": 1626960092552,
-#           },
-#         ],
+#             "updatedAt": 1626960092552
+#           }
+#         ]
 #     }
 #     )
 # )
-
-# """
-#     Prediction function for the Legal Discovery model
-#     Example input:
-#         {
-#         caseId: 'spr:bz:case::0f918737-8332-4033-9478-3bc774e703e5',
-#         documents: [
-#           {
-#             documentId: 'spr:bz:document::20007992-6cde-4cbe-b6cd-8e77d684819a',
-#             documentName: 'abc-1',
-#             status: 'pending',
-#             bucket: 'spr-barrel-dev-nextra-documents',
-#             keyPath: 'spr:bz:case::0f918737-8332-4033-9478-3bc774e703e5/abc-1.pdf',
-#             createdAt: 1626960092552,
-#             updatedAt: 1626960092552,
-#           },
-#           {
-#             documentId: 'spr:bz:document::20007992-6cde-4cbe-b6cd-8e77d684819a',
-#             documentName: 'def-1',
-#             status: 'pending',
-#             bucket: 'spr-barrel-dev-nextra-documents',
-#             keyPath: 'spr:bz:case::0f918737-8332-4033-9478-3bc774e703e5/def-1.pdf',
-#             createdAt: 1626960092552,
-#             updatedAt: 1626960092552,
-#           },
-#         ],
-#     }
-#
-# """
-#
