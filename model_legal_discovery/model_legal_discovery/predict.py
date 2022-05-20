@@ -114,8 +114,8 @@ def predict(**kwargs):
     # download_s3_folder("legal-disc", "nltk_data/", ntlk_data_loation)
     download_s3_folder("legal-disc", "transformers/", transformers_data)
     
-    # nltk.data.path.append(ntlk_data_loation + "/")
-    os.putenv("NLTK_DATA", ntlk_data_loation)
+    nltk.data.path.append(ntlk_data_loation)
+    # os.putenv("NLTK_DATA", ntlk_data_loation)
 
     tokenizer_load = AutoTokenizer.from_pretrained(transformers_data)
     model_load = AutoModelForSequenceClassification.from_pretrained(transformers_data)
