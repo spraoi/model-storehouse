@@ -1,34 +1,4 @@
-"""
-    Prediction function for the Legal Discovery model
-    Example input:
-        {
-        caseId: 'spr:bz:case::0f918737-8332-4033-9478-3bc774e703e5',
-        documents: [
-          {
-            documentId: 'spr:bz:document::20007992-6cde-4cbe-b6cd-8e77d684819a',
-            documentName: 'abc-1',
-            status: 'pending',
-            bucket: 'spr-barrel-dev-nextra-documents',
-            keyPath: 'spr:bz:case::0f918737-8332-4033-9478-3bc774e703e5/abc-1.pdf',
-            createdAt: 1626960092552,
-            updatedAt: 1626960092552,
-          },
-          {
-            documentId: 'spr:bz:document::20007992-6cde-4cbe-b6cd-8e77d684819a',
-            documentName: 'def-1',
-            status: 'pending',
-            bucket: 'spr-barrel-dev-nextra-documents',
-            keyPath: 'spr:bz:case::0f918737-8332-4033-9478-3bc774e703e5/def-1.pdf',
-            createdAt: 1626960092552,
-            updatedAt: 1626960092552,
-          },
-        ],
-    }
-
-"""
-
-
-def main(**kwargs):
+def predict(**kwargs):
     import os
     import functools
     import json
@@ -40,7 +10,6 @@ def main(**kwargs):
     from math import ceil
     from string import punctuation
     import pkg_resources
-
     import boto3
     import en_core_web_sm
     from nltk import tokenize
@@ -48,8 +17,9 @@ def main(**kwargs):
     import profanity_check as pfc
     import PyPDF2
     import torch
-    from airflow.configuration import conf
-    from airflow.hooks.spraoi_hooks import ElasticSearchHook
+
+    # from airflow.configuration import conf
+    # from airflow.hooks.spraoi_hooks import ElasticSearchHook
     from numpy import sign
     from sklearn.cluster import KMeans
     from sklearn.feature_extraction.text import TfidfVectorizer
@@ -59,18 +29,22 @@ def main(**kwargs):
     logging.info(f"{inputs=}")
 
     # todo: Move inside Airflow operator?
-    index = conf.get("dagger", "case_model_es_index")
-    es_hook = ElasticSearchHook(elasticsearch_conn_id="elasticsearch")
+    # index = conf.get("dagger", "case_model_es_index")
+    # es_hook = ElasticSearchHook(elasticsearch_conn_id="elasticsearch")
 
-    # setup location for NLTK data
-    ntlk_data_loation = pkg_resources.resource_filename(pkg_resources.Requirement.parse("model_legal_discovery"),
-                                                        "model_legal_discovery/nltk_data")
-    os.putenv("NLTK_DATA", ntlk_data_loation)
-
-    transformers_data = pkg_resources.resource_filename(pkg_resources.Requirement.parse("model_legal_discovery"),
-                                                        "model_legal_discovery/transformers")
-    tokenizer_load = AutoTokenizer.from_pretrained(transformers_data + "/tokenizer")
-    model_load = AutoModelForSequenceClassification.from_pretrained(transformers_data + "/model")
+    def download_s3_folder(bucket_name, s3_folder, local_dir=None):
+        bucket = boto3.resource("s3").Bucket(bucket_name)
+        for obj in bucket.objects.filter(Prefix=s3_folder):
+            target = (
+                obj.key
+                if local_dir is None
+                else os.path.join(local_dir, os.path.relpath(obj.key, s3_folder))
+            )
+            if not os.path.exists(os.path.dirname(target)):
+                os.makedirs(os.path.dirname(target))
+            if obj.key[-1] == "/":
+                continue
+            bucket.download_file(obj.key, target)
 
     def rec_to_actions(df):
 
@@ -124,12 +98,34 @@ def main(**kwargs):
         result = model(token_list)
         return int(torch.argmax(result.logits)) - 2
 
+    # setup location for NLTK data
+
+    transformers_data = pkg_resources.resource_filename(
+        pkg_resources.Requirement.parse("model_legal_discovery"),
+        "model_legal_discovery/transformers",
+    )
+    ntlk_data_loation = pkg_resources.resource_filename(
+        pkg_resources.Requirement.parse("model_legal_discovery"),
+        "model_legal_discovery/nltk_data",
+    )
+    transformers_data = "./transformers"
+    # populate folders using data from s3
+    download_s3_folder("legal-disc", "nltk_data/", ntlk_data_loation)
+    download_s3_folder("legal-disc", "transformers/", transformers_data)
+
+    os.putenv("NLTK_DATA", ntlk_data_loation)
+
+    tokenizer_load = AutoTokenizer.from_pretrained(transformers_data)
+    model_load = AutoModelForSequenceClassification.from_pretrained(transformers_data)
+
     case_df = pd.DataFrame()
     case_id = inputs.get("caseId")
 
     documents = inputs.get("documents")
 
-    loaded_sentiment_score = functools.partial(sentiment_score, tokenizer_load, model_load)
+    loaded_sentiment_score = functools.partial(
+        sentiment_score, tokenizer_load, model_load
+    )
 
     results = []
     for document in documents:
@@ -143,9 +139,9 @@ def main(**kwargs):
             documentStatus="In-Progress",
             createdAt=document.get("createdAt"),
         )
-        logging.info("Initial Document ES Load")
-        rec_to_actions(pd.DataFrame([doc_dict]))  # todo:
-
+        #     logging.info("Initial Document ES Load")
+        #     rec_to_actions(pd.DataFrame([doc_dict]))  # todo:
+        #
         logging.info(f"download document{document.get('keyPath')}")
         with tempfile.NamedTemporaryFile() as fp:
             bucket = boto3.resource("s3").Bucket(document.get("bucket"))
@@ -158,13 +154,13 @@ def main(**kwargs):
                 ]
             )
             total_pages = file_reader.numPages
-        # logging.info(f"{total_pages=}")
+        logging.info(f"{total_pages=}")
         doc_dict["text"] = all_text
         doc_dict["totalPages"] = total_pages
         logging.info("Get Tokens")
         tokens = tokenize.sent_tokenize(all_text)  # nltk
-
-        # logging.info("Get sentence dict and row list")
+        #
+        logging.info("Get sentence dict and row list")
         overall_score = 0
         sentence_row_list = []
         for token in tokens:
@@ -176,27 +172,25 @@ def main(**kwargs):
             )
             overall_score += score
             sentence_row_list.append(sentence_dict)
-
-        # logging.info("Get status")
+        #
+        logging.info("Get status")
         total_words = all_text.split()
         no_words = len(total_words)
         total_sentences = tokens
         no_sentences = len(total_sentences)
-
-        # logging.info("Update doc dict")
+        #
+        logging.info("Update doc dict")
         doc_dict["totalWords"] = no_words
         doc_dict["totalSentences"] = no_sentences
         doc_dict["sentences"] = sentence_row_list
         if sentence_row_list:
             doc_dict["profanityCheck"] = int(
-                round(
-                    max((x["profanityCheck"]) for x in sentence_row_list), 0
-                )  # noqa
+                round(max((x["profanityCheck"]) for x in sentence_row_list), 0)  # noqa
             )
         else:
             doc_dict["profanityCheck"] = 0
 
-        # logging.info("Entity Extract")
+        logging.info("Entity Extract")
         doc_dict["tags"], doc_dict["ctext"] = entity_extract(all_text)
         if tokens:
             logging.info("tokens found")
@@ -205,7 +199,7 @@ def main(**kwargs):
                 abs(overall_score)
             )
             doc_dict["group"] = None
-            # logging.info("build word row list")
+            logging.info("build word row list")
             word_row_list = []
             for tags in doc_dict.get("tags"):
                 tag = tags.replace("#", "")
@@ -257,13 +251,72 @@ def main(**kwargs):
                     ),
                 )
             )
-        logging.info("Document ES Update")
-        rec_to_actions(pd.DataFrame([doc_dict]))  # todo:
+    #     logging.info("Document ES Update")
+    #     rec_to_actions(pd.DataFrame([doc_dict]))  # todo:
     if len(documents) > 3:
         logging.info("Get Cluster")
         case_df = get_cluster(case_df)
     case_df.drop(columns=["text", "ctext"], inplace=True)
-    logging.info("Dataframe document ES Load")
-    rec_to_actions(case_df)  # todo:
-
+    # logging.info("Dataframe document ES Load")
+    # rec_to_actions(case_df)  # todo:
+    #
     return results
+
+
+# print(
+#     predict(
+#         inputs= {
+#         "caseId": 'spr:bz:case::0f918737-8332-4033-9478-3bc774e703e5',
+#         "documents": [
+#           {
+#             "documentId": 'spr:bz:document::20007992-6cde-4cbe-b6cd-8e77d684819a',
+#             "documentName": 'abc-1',
+#             "status": 'pending',
+#             "bucket": 'spr-barrel-dev-nextra-documents',
+#             "keyPath": 'upload/spr:bz:case::0ea2ab20-f6d8-4326-86a5-7cba526a0fcc/1629126547439/doc3_1.pdf',
+#             "createdAt": 1626960092552,
+#             "updatedAt": 1626960092552,
+#           },
+#           {
+#             "documentId": 'spr:bz:document::20007992-6cde-4cbe-b6cd-8e77d684819a',
+#             "documentName": 'def-1',
+#             "status": 'pending',
+#             "bucket": 'spr-barrel-dev-nextra-documents',
+#             "keyPath": 'jd-test/SentimentDocument1_Redacted.pdf',
+#             "createdAt": 1626960092552,
+#             "updatedAt": 1626960092552,
+#           },
+#         ],
+#     }
+#     )
+# )
+
+# """
+#     Prediction function for the Legal Discovery model
+#     Example input:
+#         {
+#         caseId: 'spr:bz:case::0f918737-8332-4033-9478-3bc774e703e5',
+#         documents: [
+#           {
+#             documentId: 'spr:bz:document::20007992-6cde-4cbe-b6cd-8e77d684819a',
+#             documentName: 'abc-1',
+#             status: 'pending',
+#             bucket: 'spr-barrel-dev-nextra-documents',
+#             keyPath: 'spr:bz:case::0f918737-8332-4033-9478-3bc774e703e5/abc-1.pdf',
+#             createdAt: 1626960092552,
+#             updatedAt: 1626960092552,
+#           },
+#           {
+#             documentId: 'spr:bz:document::20007992-6cde-4cbe-b6cd-8e77d684819a',
+#             documentName: 'def-1',
+#             status: 'pending',
+#             bucket: 'spr-barrel-dev-nextra-documents',
+#             keyPath: 'spr:bz:case::0f918737-8332-4033-9478-3bc774e703e5/def-1.pdf',
+#             createdAt: 1626960092552,
+#             updatedAt: 1626960092552,
+#           },
+#         ],
+#     }
+#
+# """
+#
