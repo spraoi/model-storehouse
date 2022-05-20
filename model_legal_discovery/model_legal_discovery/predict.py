@@ -262,7 +262,7 @@ def predict(**kwargs):
     # logging.info("Dataframe document ES Load")
     # rec_to_actions(case_df)  # todo:
     #
-    return [results]
+    return json.dumps(results)
 
 
 # print(
