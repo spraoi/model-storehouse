@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "model_ner"
-version = "0.1.0"
+version = "0.1.1"
 description = "Model NER"
 authors = ["Teja <teja@spraoi.ai>"]
 maintainers = [
@@ -21,11 +21,11 @@ include = ["model_ner/data/*"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-s3fs = "~2021.6"
-boto3 = "~1.17"
-pandas = "~1.2"
-joblib = "~0.14"
-spacy = "~2.2"
+s3fs = "~0.4.2"
+boto3 = "~1.24.13"
+pandas = "~1.4"
+joblib = "~1.1"
+spacy = "2.2.0"
 
 
 [build-system]
