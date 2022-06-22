@@ -29,8 +29,13 @@ def predict(**kwargs):
 
     inputs = kwargs.get("inputs")
 
-    def download_s3_res(bucket_name: str, key_name: str = None, s3_folder: str = None, local_dir: str = None,
-                        temp_file: str = None):
+    def download_s3_res(
+        bucket_name: str,
+        key_name: str = None,
+        s3_folder: str = None,
+        local_dir: str = None,
+        temp_file: str = None,
+    ):
         bucket = boto3.resource("s3").Bucket(bucket_name)
         if s3_folder:
             for obj in bucket.objects.filter(Prefix=s3_folder):
@@ -67,8 +72,8 @@ def predict(**kwargs):
         doc = nlp(str(text_given).lower())
         for doc_token in doc:
             if (
-                    doc_token.text in nlp.Defaults.stop_words
-                    or doc_token.text in punctuation
+                doc_token.text in nlp.Defaults.stop_words
+                or doc_token.text in punctuation
             ):
                 continue
             if doc_token.pos_ in pos_tag:
@@ -138,7 +143,11 @@ def predict(**kwargs):
         )
 
         with tempfile.NamedTemporaryFile() as fp:
-            download_s3_res(bucket_name=document.get("bucket"), key_name=document.get("keyPath"), temp_file=fp)
+            download_s3_res(
+                bucket_name=document.get("bucket"),
+                key_name=document.get("keyPath"),
+                temp_file=fp,
+            )
             file_reader = PyPDF2.PdfFileReader(fp)
             all_text = "".join(
                 [
@@ -239,6 +248,7 @@ def predict(**kwargs):
     case_df.drop(columns=["text", "ctext"], inplace=True)
 
     return results
+
 
 # print(
 #     predict(
