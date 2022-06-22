@@ -1,7 +1,12 @@
+"""
+ Predict function for legal discovery
+"""
+
+
 def predict(**kwargs):
     import os
     import functools
-    import json
+    import logging
     import re
     import tempfile
     import time
@@ -34,7 +39,7 @@ def predict(**kwargs):
                     if local_dir is None
                     else os.path.join(local_dir, os.path.relpath(obj.key, s3_folder))
                 )
-                print(target)
+                logging.info(f"{target=}")
                 if not os.path.exists(os.path.dirname(target)):
                     os.makedirs(os.path.dirname(target))
                 if obj.key[-1] == "/":
@@ -96,6 +101,10 @@ def predict(**kwargs):
             model_bucket, model_folder = get_bucket_and_key_from_s3_uri(
                 artifact.get("dataValue")
             )
+            break
+    else:
+        # model dir not found
+        raise ValueError("Missing artifact called model_dir")
 
     tmp_dir = tempfile.gettempdir()
     # populate folders using data from s3
