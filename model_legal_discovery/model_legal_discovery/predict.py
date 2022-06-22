@@ -2,7 +2,6 @@ def predict(**kwargs):
     import os
     import functools
     import json
-    import logging
     import re
     import tempfile
     import time
@@ -18,47 +17,31 @@ def predict(**kwargs):
     import profanity_check as pfc
     import PyPDF2
     import torch
-
-    # from airflow.configuration import conf
-    # from airflow.hooks.spraoi_hooks import ElasticSearchHook
     from numpy import sign
     from sklearn.cluster import KMeans
     from sklearn.feature_extraction.text import TfidfVectorizer
     from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
     inputs = kwargs.get("inputs")
-    logging.info(f"{inputs=}")
 
-    # todo: Move inside Airflow operator?
-    # index = conf.get("dagger", "case_model_es_index")
-    # es_hook = ElasticSearchHook(elasticsearch_conn_id="elasticsearch")
-
-    def download_s3_folder(bucket_name, s3_folder, local_dir=None):
+    def download_s3_res(bucket_name: str, key_name: str = None, s3_folder: str = None, local_dir: str = None,
+                        temp_file: str = None):
         bucket = boto3.resource("s3").Bucket(bucket_name)
-        for obj in bucket.objects.filter(Prefix=s3_folder):
-            target = (
-                obj.key
-                if local_dir is None
-                else os.path.join(local_dir, os.path.relpath(obj.key, s3_folder))
-            )
-            if not os.path.exists(os.path.dirname(target)):
-                os.makedirs(os.path.dirname(target))
-            if obj.key[-1] == "/":
-                continue
-            bucket.download_file(obj.key, target)
-
-    def rec_to_actions(df):
-
-        for record in df.to_dict(orient="records"):
-            try:
-                res = es_hook.create_or_update(
-                    index=index,
-                    body=json.dumps(record),
-                    doc_id=record["id"],
+        if s3_folder:
+            for obj in bucket.objects.filter(Prefix=s3_folder):
+                target = (
+                    obj.key
+                    if local_dir is None
+                    else os.path.join(local_dir, os.path.relpath(obj.key, s3_folder))
                 )
-                logging.info(f"{res=}")
-            except BaseException as e:
-                logging.error("Failed to push data to ElasticSearch [{}]".format(e))
+                print(target)
+                if not os.path.exists(os.path.dirname(target)):
+                    os.makedirs(os.path.dirname(target))
+                if obj.key[-1] == "/":
+                    continue
+                bucket.download_file(obj.key, target)
+        else:
+            bucket.download_fileobj(key_name, temp_file)
 
     def get_cluster(case_dataframe):
         all_docs = case_dataframe["text"].to_list()
@@ -79,8 +62,8 @@ def predict(**kwargs):
         doc = nlp(str(text_given).lower())
         for doc_token in doc:
             if (
-                doc_token.text in nlp.Defaults.stop_words
-                or doc_token.text in punctuation
+                    doc_token.text in nlp.Defaults.stop_words
+                    or doc_token.text in punctuation
             ):
                 continue
             if doc_token.pos_ in pos_tag:
@@ -99,26 +82,30 @@ def predict(**kwargs):
         result = model(token_list)
         return int(torch.argmax(result.logits)) - 2
 
-    # setup location  data
+    def get_bucket_and_key_from_s3_uri(uri):
+        bucket, key = uri.split("/", 2)[-1].split("/", 1)
+        return bucket, key
 
-    transformers_data = pkg_resources.resource_filename(
-        pkg_resources.Requirement.parse("model_legal_discovery"),
-        "model_legal_discovery/transformers",
-    )
     ntlk_data_loation = pkg_resources.resource_filename(
         pkg_resources.Requirement.parse("model_legal_discovery"),
         "model_legal_discovery/nltk_data",
     )
 
-    # populate folders using data from s3
-    download_s3_folder("legal-disc", "transformers/", transformers_data)
+    for artifact in kwargs.get("artifact"):
+        if artifact.get("dataName") == "model_dir":
+            model_bucket, model_folder = get_bucket_and_key_from_s3_uri(
+                artifact.get("dataValue")
+            )
 
+    tmp_dir = tempfile.gettempdir()
+    # populate folders using data from s3
+    download_s3_res(bucket_name=model_bucket, s3_folder=model_folder, local_dir=tmp_dir)
     # add search path to nltk
     nltk.data.path.append(ntlk_data_loation)
 
-    tokenizer_load = AutoTokenizer.from_pretrained(transformers_data)
-    model_load = AutoModelForSequenceClassification.from_pretrained(transformers_data)
-
+    tokenizer_load = AutoTokenizer.from_pretrained(tmp_dir)
+    model_load = AutoModelForSequenceClassification.from_pretrained(tmp_dir)
+    #
     case_df = pd.DataFrame()
     case_id = inputs.get("caseId")
 
@@ -140,13 +127,9 @@ def predict(**kwargs):
             documentStatus="In-Progress",
             createdAt=document.get("createdAt"),
         )
-        #     logging.info("Initial Document ES Load")
-        #     rec_to_actions(pd.DataFrame([doc_dict]))  # todo:
-        #
-        logging.info(f"download document{document.get('keyPath')}")
+
         with tempfile.NamedTemporaryFile() as fp:
-            bucket = boto3.resource("s3").Bucket(document.get("bucket"))
-            bucket.download_fileobj(document.get("keyPath"), fp)
+            download_s3_res(bucket_name=document.get("bucket"), key_name=document.get("keyPath"), temp_file=fp)
             file_reader = PyPDF2.PdfFileReader(fp)
             all_text = "".join(
                 [
@@ -155,13 +138,9 @@ def predict(**kwargs):
                 ]
             )
             total_pages = file_reader.numPages
-        logging.info(f"{total_pages=}")
         doc_dict["text"] = all_text
         doc_dict["totalPages"] = total_pages
-        logging.info("Get Tokens")
         tokens = tokenize.sent_tokenize(all_text)  # nltk
-        #
-        logging.info("Get sentence dict and row list")
         overall_score = 0
         sentence_row_list = []
         for token in tokens:
@@ -173,14 +152,12 @@ def predict(**kwargs):
             )
             overall_score += score
             sentence_row_list.append(sentence_dict)
-        #
-        logging.info("Get status")
+
         total_words = all_text.split()
         no_words = len(total_words)
         total_sentences = tokens
         no_sentences = len(total_sentences)
-        #
-        logging.info("Update doc dict")
+
         doc_dict["totalWords"] = no_words
         doc_dict["totalSentences"] = no_sentences
         doc_dict["sentences"] = sentence_row_list
@@ -191,16 +168,13 @@ def predict(**kwargs):
         else:
             doc_dict["profanityCheck"] = 0
 
-        logging.info("Entity Extract")
         doc_dict["tags"], doc_dict["ctext"] = entity_extract(all_text)
         if tokens:
-            logging.info("tokens found")
             overall_score = round(overall_score / len(tokens), 3)
             doc_dict["sentimentFeedback"] = sign(overall_score) * ceil(
                 abs(overall_score)
             )
             doc_dict["group"] = None
-            logging.info("build word row list")
             word_row_list = []
             for tags in doc_dict.get("tags"):
                 tag = tags.replace("#", "")
@@ -230,14 +204,12 @@ def predict(**kwargs):
                     ),
                 )
             )
-            logging.info("Create doc dataframe")
             doc_df = pd.DataFrame(
                 [
                     doc_dict,
                 ]
             )
             if doc_df.shape[0]:
-                logging.info("Append doc dataframe to case dataframe")
                 case_df = case_df.append(doc_df, ignore_index=True)
         else:
             doc_dict["documentStatus"] = "unprocessed"
@@ -252,42 +224,44 @@ def predict(**kwargs):
                     ),
                 )
             )
-    #     logging.info("Document ES Update")
-    #     rec_to_actions(pd.DataFrame([doc_dict]))  # todo:
+
     if len(documents) > 3:
-        logging.info("Get Cluster")
         case_df = get_cluster(case_df)
     case_df.drop(columns=["text", "ctext"], inplace=True)
-    # logging.info("Dataframe document ES Load")
-    # rec_to_actions(case_df)  # todo:
-    #
-    return results
 
+    return results
 
 # print(
 #     predict(
-#         inputs= {
-#         "caseId": 'spr:bz:case::0f918737-8332-4033-9478-3bc774e703e5',
-#         "documents": [
-#           {
-#             "documentId": 'spr:bz:document::20007992-6cde-4cbe-b6cd-8e77d684819a',
-#             "documentName": 'abc-1',
-#             "status": 'pending',
-#             "bucket": 'spr-barrel-dev-nextra-documents',
-#             "keyPath": 'upload/spr:bz:case::0ea2ab20-f6d8-4326-86a5-7cba526a0fcc/1629126547439/doc3_1.pdf',
-#             "createdAt": 1626960092552,
-#             "updatedAt": 1626960092552
-#           },
-#           {
-#             "documentId": 'spr:bz:document::20007992-6cde-4cbe-b6cd-8e77d684819a',
-#             "documentName": 'def-1',
-#             "status": 'pending',
-#             "bucket": 'spr-barrel-dev-nextra-documents',
-#             "keyPath": 'jd-test/SentimentDocument1_Redacted.pdf',
-#             "createdAt": 1626960092552,
-#             "updatedAt": 1626960092552
-#           }
-#         ]
-#     }
+#         artifact=[
+#             {
+#                 "dataName": "model_dir",
+#                 "dataType": "artifact",
+#                 "dataValue": "s3://legal-disc/transformers/",
+#                 "dataValueType": "str"
+#             }],
+#         inputs={
+#             "caseId": 'spr:bz:case::0f918737-8332-4033-9478-3bc774e703e5',
+#             "documents": [
+#                 {
+#                     "documentId": 'spr:bz:document::20007992-6cde-4cbe-b6cd-8e77d684819a',
+#                     "documentName": 'abc-1',
+#                     "status": 'pending',
+#                     "bucket": 'spr-barrel-dev-nextra-documents',
+#                     "keyPath": 'upload/spr:bz:case::0ea2ab20-f6d8-4326-86a5-7cba526a0fcc/1629126547439/doc3_1.pdf',
+#                     "createdAt": 1626960092552,
+#                     "updatedAt": 1626960092552
+#                 },
+#                 {
+#                     "documentId": 'spr:bz:document::20007992-6cde-4cbe-b6cd-8e77d684819a',
+#                     "documentName": 'def-1',
+#                     "status": 'pending',
+#                     "bucket": 'spr-barrel-dev-nextra-documents',
+#                     "keyPath": 'jd-test/SentimentDocument1_Redacted.pdf',
+#                     "createdAt": 1626960092552,
+#                     "updatedAt": 1626960092552
+#                 }
+#             ]
+#         }
 #     )
 # )
