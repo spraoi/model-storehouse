@@ -60,6 +60,11 @@ wasabi = "0.9.1"
 wrapt = "1.14.1"
 yarl = "1.7.2"
 
+# s3fs = "~2021.6"
+# boto3 = "~1.17"
+# pandas = "~1.2"
+# joblib = "~0.14"
+# spacy = "~2.2"
 
 [build-system]
 requires = ["poetry>=0.12"]
