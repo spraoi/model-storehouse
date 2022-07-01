@@ -129,6 +129,7 @@ def predict(**kwargs):
         df = df[~df["Claim Status Code"].isin(["92"])]
         df = _resolve_formatting(df, date_cols=date_cols, numeric_cols=numeric_cols)
         df = df[df["Loss Date"].notna()]
+        df = df[df["Primary Diagnosis Code"].notna()]
         df = df.dropna(subset=numeric_cols, how="any")
         df = df[(df["Insured Age at Loss"] > 16.0) & (df["Insured Age at Loss"] < 90.0)]
 
@@ -196,14 +197,34 @@ def predict(**kwargs):
         df.loc[:, "Claim State"] = df.loc[:, "Claim State"].astype("category")
         return df
 
-    # artifacts = download_model_from_s3(model_bucket, model_key)
-    with open("./data/combined_artifacts_120k.sav", "rb") as f:
-        artifacts = joblib.load(f)
-    robust_scaler_obj, catboost_enc_obj, rf_model, template_obj, remap_obj = artifacts
+    def _compose_data(df: pd.DataFrame):
+        df.loc[:, scaler_cols] = robust_scaler_obj.transform(
+            df.loc[:, scaler_cols].to_numpy()
+        )
+
+        df_enc = catboost_enc_obj.transform(df[categorical_cols])
+        df.drop(columns=categorical_cols, inplace=True)
+        df = pd.concat([df, df_enc], axis=1)
+
+        return df
+
+    artifacts = download_model_from_s3(model_bucket, model_key)
+    # with open("./data/combined_artifacts_120k.sav", "rb") as f:
+    #     artifacts = joblib.load(f)
+    (
+        robust_scaler_obj,
+        catboost_enc_obj,
+        rf_model,
+        template_obj,
+        remap_obj,
+        t4_list,
+    ) = artifacts
 
     input_data = pd.DataFrame([kwargs.get("inputs").get("claim")])
+    claim_no = input_data["Claim Identifier"]
     input_data = _filter_bank_one(input_data)
     _check_for_no_data(input_data, "filter bank 1")
+    pd_code = input_data["Primary Diagnosis Code"]
 
     input_data = input_data[date_cols + numeric_cols + categorical_cols]
     input_data = _check_na_counts_thresh(input_data)
@@ -235,31 +256,18 @@ def predict(**kwargs):
     df = _replace_state(input_data, remap_obj)
     df.reset_index(inplace=True, drop=True)
 
-    df.loc[:, scaler_cols] = robust_scaler_obj.transform(
-        df.loc[:, scaler_cols].to_numpy()
-    )
-
-    df_enc = catboost_enc_obj.transform(df[categorical_cols])
-    df.drop(columns=categorical_cols, inplace=True)
-    df = pd.concat([df, df_enc], axis=1)
-
+    df = _compose_data(df)
     prediction = rf_model.predict(df)
     class_confidence = float(rf_model.predict_proba(df)[0][prediction])
-    df["prediction"] = prediction
-    df["class_confidence"] = class_confidence
+    df["predictedSegment"] = prediction
+    df["predictedProbability"] = class_confidence
+    df["claimNumber"] = claim_no
 
-    # payload_data = test_final.loc[
-    #     :, ["Claim Identifier", "p_corrected", "p_labels_corrected"]
-    # ].copy()  # ,'Claim Status Category'
-    # payload_data.columns = [
-    #     "claimNumber",
-    #     "predictedProbability",
-    #     "predictedValue",
-    # ]  # ,'claimStatusCategory'
-    # prediction_json = json.loads(payload_data.to_json(orient="records"))
-    # predicted_claim = prediction_json[0] if prediction_json else None
-    # return [{"inputDataSource":f"{predicted_claim.get('claimNumber')}:0","entityId":predicted_claim.get("claimNumber"),"predictedResult":predicted_claim}]
-    return "done"
+    payload_data = df.loc[
+        :, ["claimNumber", "predictedSegment", "predictedProbability"]
+    ].copy()
+    prediction_json = json.loads(payload_data.to_json(orient="records"))
+    return prediction_json
 
 
 # example input

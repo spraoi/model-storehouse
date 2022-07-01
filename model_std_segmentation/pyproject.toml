@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "model_std_segmentation"
-version = "0.0.1"
+version = "0.0.2"
 description = "Model STD segmentation"
 authors = ["tariq <tariq.mohamed@fineos.com>"]
 maintainers = [
@@ -19,11 +19,32 @@ packages = [
 
 [tool.poetry.dependencies]
 python = "^3.8"
-boto3 = "*"
-sklearn = "*"
-category-encoders = "*"
-pandas = "*"
-joblib = "*"
+#boto3 = "*"
+#sklearn = "*"
+#category-encoders = "*"
+#pandas = "*"
+#joblib = "*"
+boto3 = "1.24.21"
+botocore = "1.27.21"
+category-encoders = "2.5.0"
+jmespath = "1.0.1"
+joblib = "1.1.0"
+numpy = "1.23.0"
+packaging = "21.3"
+pandas = "1.4.3"
+patsy = "0.5.2"
+pyparsing = "3.0.9"
+python-dateutil = "2.8.2"
+pytz = "2022.1"
+s3transfer = "0.6.0"
+scikit-learn = "1.1.1"
+scipy = "1.6.1"
+six = "1.16.0"
+sklearn = "0.0"
+statsmodels = "0.13.2"
+threadpoolctl = "3.1.0"
+urllib3 = "1.26.9"
+
 
 [build-system]
 requires = ["poetry>=1.0.0"]
