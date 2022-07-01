@@ -1,0 +1,30 @@
+[tool.poetry]
+name = "model_std_segmentation"
+version = "0.0.1"
+description = "Model STD segmentation"
+authors = ["tariq <tariq.mohamed@fineos.com>"]
+maintainers = [
+    "tariq <tariq.mohamed@fineos.com>",
+]
+license = "Proprietary"
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+packages = [
+    { include = "model_std_segmentation" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+boto3 = "*"
+sklearn = "*"
+category-encoders = "*"
+pandas = "*"
+joblib = "*"
+
+[build-system]
+requires = ["poetry>=1.0.0"]
+build-backend = "poetry.masonry.api"
