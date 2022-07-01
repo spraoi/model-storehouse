@@ -1,11 +1,12 @@
+import functools
+import json
 import logging
-import sys
 import tempfile
 
 import boto3
 import joblib
 import numpy as np
-import pandas as pd
+import pandas as pds
 
 numeric_cols = ["Insured Annualized Salary", "Policy Lives", "Insured Age at Loss"]
 
@@ -31,6 +32,8 @@ categorical_cols = [
     "Claim Cause Desc",
 ]
 
+date_diff_cols = list(set(date_cols).difference({"Loss Date", "Nurse Cert End Date"}))
+
 
 def get_bucket_and_key_from_s3_uri(uri: str):
     bucket, key = uri.split("/", 2)[-1].split("/", 1)
@@ -47,20 +50,25 @@ def download_model_from_s3(bucket_name, key):
 
 def _check_for_no_data(df: pd.DataFrame, hint: str = None) -> int:
     if df.empty:
-        logging.info(f"no data after {hint}")
+        logging.info(f"no data post {hint}")
         return 1
     else:
         return 0
 
 
-def _fill_date_cols(df: pd.DataFrame, date_cols: list) -> pd.DataFrame:
+def _payment_date_filter(df: pd.DataFrame) -> pd.DataFrame:
+    # if df["Last Payment To Date"].isna().bool()
+    return df[~(df["Last Payment To Date"] < df["First Payment From Date"])]
+
+
+def _fill_date_cols(df: pd.DataFrame, date_cols: list = date_diff_cols) -> pd.DataFrame:
     for col in date_cols:
         df[col].fillna(pd.to_datetime("01/01/1997"), inplace=True)
     return df
 
 
 def _resolve_formatting(
-    df: pd.DataFrame, date_cols: list, numeric_cols: list
+    df: pd.DataFrame, date_cols: list = date_cols, numeric_cols: list = numeric_cols
 ) -> pd.DataFrame:
     for col in list(df.columns):
         if col in date_cols:
@@ -74,7 +82,7 @@ def _resolve_formatting(
     return df
 
 
-def _to_category(df: pd.DataFrame, cat_cols: list) -> pd.DataFrame:
+def _to_category(df: pd.DataFrame, cat_cols: list = categorical_cols) -> pd.DataFrame:
     for col in cat_cols:
         df.loc[:, col] = df.loc[:, col].astype("category")
     return df
@@ -97,7 +105,6 @@ def _fix_nurse_date(df: pd.DataFrame) -> pd.DataFrame:
 def _filter_bank_two(df: pd.DataFrame) -> pd.DataFrame:
     if not df["Policy Effective Date"].isnull().bool():
         df = df[df["Loss Date"] > df["Policy Effective Date"]]
-
     if not df["Policy Termination Date"].isnull().bool():
         df = df[~(df["Loss Date"] > df["Policy Termination Date"])]
     if not df["Approval Date"].isnull().bool():
@@ -105,7 +112,6 @@ def _filter_bank_two(df: pd.DataFrame) -> pd.DataFrame:
     if not df["Closed Date"].isnull().bool():
         df = df[~(df["Loss Date"] > df["Closed Date"])]
 
-    df.reset_index(drop=True, inplace=True)
     return df
 
 
@@ -146,12 +152,13 @@ def _check_na_counts_thresh(df: pd.DataFrame, thresh: int = 5) -> int:
     if test_na_sum_date + test_na_sum_cat > thresh:
         logging.info("too many NaN values while comparing with threshold")
         logging.info(test_na_sum_date + test_na_sum_cat)
-        return 1
-    else:
-        return 0
+        df["bad_data"] = 1
+        return df
+    df["bad_data"] = 0
+    return df
 
 
-def _remap_features(df: pd.DataFrame, remap_columns: list) -> pd.DataFrame:
+def _remap_features(df: pd.DataFrame) -> pd.DataFrame:
 
     pd_cat = [
         "UNKNOWN",
@@ -164,13 +171,12 @@ def _remap_features(df: pd.DataFrame, remap_columns: list) -> pd.DataFrame:
         "MENTAL & NERVOUS DISORDERS",
     ]
 
-    for col in remap_columns:
-        if col == "Primary Diagnosis Category":
-            df.loc[(~df[col].isin(pd_cat) & df[col].notnull()), col] = "OTHERS"
+    col = "Primary Diagnosis Category"
+    df.loc[(~df[col].isin(pd_cat) & df[col].notnull()), col] = "OTHERS"
     return df
 
 
-def _date_diff_all(df: pd.DataFrame, date_cols: list) -> pd.DataFrame:
+def _date_diff_all(df: pd.DataFrame, date_cols: list = date_diff_cols) -> pd.DataFrame:
     for col in date_cols:
         df.loc[:, col] = get_date_diff(df.loc[:, "Loss Date"], df.loc[:, col], "D")
         df[col] = df[col].astype(int)
@@ -181,3 +187,33 @@ def _replace_state(df: pd.DataFrame, mapping: dict) -> pd.DataFrame:
     df.loc[:, "Claim State"] = df["Claim State"].map(mapping)
     df.loc[:, "Claim State"] = df.loc[:, "Claim State"].astype("category")
     return df
+
+
+def _compose2(f, g):
+    return lambda *a, **kw: f(g(*a, **kw))
+
+
+def _compose(*fs):
+    return functools.reduce(_compose2, fs)
+
+
+def _generate_payload(df):
+    payload = df.loc[
+        :,
+        [
+            "Claim Identifier",
+            "predictedSegment",
+            "predictedProbability",
+            "tier",
+            "tierHint",
+        ],
+    ].copy()
+    payload.columns = [
+        "claimNumber",
+        "predictedSegment",
+        "predictedProbability",
+        "tier",
+        "tierHint",
+    ]
+    payload_json = json.loads(payload.to_json(orient="records"))
+    return payload_json
