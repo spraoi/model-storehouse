@@ -6,7 +6,7 @@ import tempfile
 import boto3
 import joblib
 import numpy as np
-import pandas as pds
+import pandas as pd
 
 numeric_cols = ["Insured Annualized Salary", "Policy Lives", "Insured Age at Loss"]
 
