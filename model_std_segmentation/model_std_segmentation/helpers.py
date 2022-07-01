@@ -116,11 +116,6 @@ def _filter_bank_one(df: pd.DataFrame) -> pd.DataFrame:
     df = df[df["Primary Diagnosis Code"].notna()]
     df = df.dropna(subset=numeric_cols, how="any")
     df = df[(df["Insured Age at Loss"] > 16.0) & (df["Insured Age at Loss"] < 90.0)]
-
-    return df
-
-
-def _filter_bank_three(df: pd.DataFrame) -> pd.DataFrame:
     df = df[df["Policy Lives"].notna()]
     df["Policy Lives"] = df["Policy Lives"].astype(int)
     df = df[~df["Policy Lives"] <= 0]

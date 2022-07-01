@@ -134,9 +134,6 @@ def predict(**kwargs):
     input_data = _filter_bank_two(input_data)
     bad_data_flag = _check_for_no_data(input_data, "filter bank 2")
 
-    input_data = _filter_bank_three(input_data)
-    bad_data_flag = _check_for_no_data(input_data, "filter bank 3")
-
     input_data = _fill_date_cols(
         input_data,
         date_cols=list(set(date_cols).difference({"Loss Date", "Nurse Cert End Date"})),
