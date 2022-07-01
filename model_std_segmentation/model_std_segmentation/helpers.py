@@ -45,10 +45,12 @@ def download_model_from_s3(bucket_name, key):
     return loaded_model
 
 
-def _check_for_no_data(df: pd.DataFrame, hint: str = None) -> None:
+def _check_for_no_data(df: pd.DataFrame, hint: str = None) -> int:
     if df.empty:
         logging.info(f"no data after {hint}")
-        sys.exit()
+        return 1
+    else:
+        return 0
 
 
 def _fill_date_cols(df: pd.DataFrame, date_cols: list) -> pd.DataFrame:
@@ -138,7 +140,7 @@ def _fill_unknown(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def _check_na_counts_thresh(df: pd.DataFrame, thresh: int = 5) -> pd.DataFrame:
+def _check_na_counts_thresh(df: pd.DataFrame, thresh: int = 5) -> int:
     test_na_sum_date = (
         df[list(set(date_cols).difference({"Loss Date", "Nurse Cert End Date"}))]
         .isnull()
@@ -149,9 +151,9 @@ def _check_na_counts_thresh(df: pd.DataFrame, thresh: int = 5) -> pd.DataFrame:
     if test_na_sum_date + test_na_sum_cat > thresh:
         logging.info("too many NaN values while comparing with threshold")
         logging.info(test_na_sum_date + test_na_sum_cat)
-        sys.exit()
+        return 1
     else:
-        return df
+        return 0
 
 
 def _remap_features(df: pd.DataFrame, remap_columns: list) -> pd.DataFrame:

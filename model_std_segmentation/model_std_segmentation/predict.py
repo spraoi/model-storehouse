@@ -1,7 +1,11 @@
+import numpy as np
+
+
 def predict(**kwargs):
     import json
     import logging
 
+    import joblib
     import pandas as pd
 
     from model_std_segmentation.helpers import (
@@ -60,9 +64,56 @@ def predict(**kwargs):
 
         return df
 
-    artifacts = download_model_from_s3(model_bucket, model_key)
-    # with open("./data/combined_artifacts_120k.sav", "rb") as f:
-    #     artifacts = joblib.load(f)
+    def _output_transform_apply(df: pd.DataFrame, tier: int) -> pd.DataFrame:
+        mapping = {
+            1: "High potential RTW",
+            2: "Complex RTW",
+            3: "Behavioural health",
+            4: "Extended disability",
+            5: "Bad Data",
+        }
+        df["tier"] = tier
+        df["tierHint"] = mapping[tier]
+        if tier == 5:
+            df["predictedProbability"] = np.NaN
+            df["predictedSegment"] = np.NaN
+            return _generate_payload(df)
+        return df
+
+    def _output_transform_logic(df: pd.DataFrame) -> pd.DataFrame:
+        if df.loc[0, "predictedSegment"] == 0:
+            df = _output_transform_apply(df, 1)
+        elif df.loc[0, "predictedSegment"] == 1:
+            if df.loc[0, "pdCode"].isin(t4_list):
+                df = _output_transform_apply(df, 4)
+            else:
+                df = _output_transform_apply(df, 2)
+        return df
+
+    def _generate_payload(df):
+        payload = df.loc[
+            :,
+            [
+                "Claim Identifier",
+                "predictedSegment",
+                "predictedProbability",
+                "tier",
+                "tierHint",
+            ],
+        ].copy()
+        payload.columns = [
+            "claimNumber",
+            "predictedSegment",
+            "predictedProbability",
+            "tier",
+            "tierHint",
+        ]
+        payload_json = json.loads(payload.to_json(orient="records"))
+        return payload_json
+
+    # artifacts = download_model_from_s3(model_bucket, model_key)
+    with open("./data/combined_artifacts_120k.sav", "rb") as f:
+        artifacts = joblib.load(f)
     (
         robust_scaler_obj,
         catboost_enc_obj,
@@ -73,18 +124,18 @@ def predict(**kwargs):
     ) = artifacts
 
     input_data = pd.DataFrame([kwargs.get("inputs").get("claim")])
+    bkp_df = input_data.copy()
     claim_no = input_data["Claim Identifier"]
     input_data = _filter_bank_one(input_data)
-    _check_for_no_data(input_data, "filter bank 1")
+    bad_data_flag = _check_for_no_data(input_data, "filter bank 1")
     pd_code = input_data["Primary Diagnosis Code"]
 
-    input_data = input_data[date_cols + numeric_cols + categorical_cols]
-    input_data = _check_na_counts_thresh(input_data)
+    bad_data_flag = _check_na_counts_thresh(input_data)
     input_data = _filter_bank_two(input_data)
-    _check_for_no_data(input_data, "filter bank 2")
+    bad_data_flag = _check_for_no_data(input_data, "filter bank 2")
 
     input_data = _filter_bank_three(input_data)
-    _check_for_no_data(input_data, "filter bank 3")
+    bad_data_flag = _check_for_no_data(input_data, "filter bank 3")
 
     input_data = _fill_date_cols(
         input_data,
@@ -104,22 +155,24 @@ def predict(**kwargs):
     )
 
     input_data = _to_category(input_data, cat_cols=categorical_cols)
+    input_data = input_data[date_cols + numeric_cols + categorical_cols]
     input_data.drop(columns=["Loss Date"], inplace=True)
     df = _replace_state(input_data, remap_obj)
     df.reset_index(inplace=True, drop=True)
+
+    if _check_for_no_data(df):
+        return _output_transform_apply(bkp_df, tier=5)
 
     df = _compose_data(df)
     prediction = rf_model.predict(df)
     class_confidence = float(rf_model.predict_proba(df)[0][prediction])
     df["predictedSegment"] = prediction
     df["predictedProbability"] = class_confidence
-    df["claimNumber"] = claim_no
+    df["Claim Identifier"] = claim_no
+    df["pdCode"] = pd_code
 
-    payload_data = df.loc[
-        :, ["claimNumber", "predictedSegment", "predictedProbability"]
-    ].copy()
-    prediction_json = json.loads(payload_data.to_json(orient="records"))
-    return prediction_json
+    df = _output_transform_logic(df)
+    return _generate_payload(df)
 
 
 # example input
