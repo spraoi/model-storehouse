@@ -146,7 +146,7 @@ def predict(**kwargs):
 
 
 # example input
-
+#
 # print(
 #     predict(
 #         model_name="model_std_segmentation",

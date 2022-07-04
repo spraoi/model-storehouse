@@ -216,10 +216,11 @@ def _generate_payload(df):
         "tierHint",
     ]
     payload_json = json.loads(payload.to_json(orient="records"))
+    predicted_claim = payload_json[0] if payload_json else None
     return [
         {
-            "inputDataSource": f"{df.get('Claim Identifier')}:0",
-            "entityId": df.get("Claim Identifier"),
-            "predictedResult": payload_json,
+            "inputDataSource": f"{predicted_claim.get('claimNumber')}:0",
+            "entityId": predicted_claim.get("claimNumber"),
+            "predictedResult": predicted_claim,
         }
     ]
