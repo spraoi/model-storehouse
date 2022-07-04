@@ -81,7 +81,7 @@ def predict(**kwargs):
         if df.loc[0, "predictedSegment"] == 0:
             df = _output_transform_apply(df, 1)
         elif df.loc[0, "predictedSegment"] == 1:
-            x = df[df.loc[0, "pdCode"].isin(t4_list)]
+            x = df[df["pdCode"].isin(t4_list)]
             if not x.empty():
                 df = _output_transform_apply(df, 4)
             else:
