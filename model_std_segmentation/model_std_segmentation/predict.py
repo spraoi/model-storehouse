@@ -138,7 +138,7 @@ def predict(**kwargs):
     df["pdCode"] = pd_code
 
     payload = _generate_payload(_output_transform_logic(df))
-    if df.loc[0, "pdCode"] == "MENTAL & NERVOUS DISORDER":
+    if df.loc[0, "pdCode"] == "Mental and Nervous Disorder":
         payload = _generate_payload(_output_transform_apply(df, tier=3))
     return payload
 
