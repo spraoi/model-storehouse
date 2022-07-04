@@ -1,7 +1,6 @@
 def predict(**kwargs):
     import functools
 
-    import joblib
     import numpy as np
     import pandas as pd
 
@@ -88,9 +87,9 @@ def predict(**kwargs):
                 df = _output_transform_apply(df, 2)
         return df
 
-    # artifacts = download_model_from_s3(model_bucket, model_key)
-    with open("./data/combined_artifacts_120k.sav", "rb") as f:
-        artifacts = joblib.load(f)
+    artifacts = download_model_from_s3(model_bucket, model_key)
+    # with open("./data/combined_artifacts_120k.sav", "rb") as f:
+    #     artifacts = joblib.load(f)
     (
         robust_scaler_obj,
         catboost_enc_obj,
