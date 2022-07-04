@@ -1,6 +1,7 @@
 def predict(**kwargs):
     import functools
 
+    import joblib
     import numpy as np
     import pandas as pd
 
@@ -80,15 +81,16 @@ def predict(**kwargs):
         if df.loc[0, "predictedSegment"] == 0:
             df = _output_transform_apply(df, 1)
         elif df.loc[0, "predictedSegment"] == 1:
-            if df.loc[0, "pdCode"].isin(t4_list):
+            x = df[df.loc[0, "pdCode"].isin(t4_list)]
+            if not x.empty():
                 df = _output_transform_apply(df, 4)
             else:
                 df = _output_transform_apply(df, 2)
         return df
 
-    artifacts = download_model_from_s3(model_bucket, model_key)
-    # with open("./data/combined_artifacts_120k.sav", "rb") as f:
-    #     artifacts = joblib.load(f)
+    # artifacts = download_model_from_s3(model_bucket, model_key)
+    with open("./data/combined_artifacts_120k.sav", "rb") as f:
+        artifacts = joblib.load(f)
     (
         robust_scaler_obj,
         catboost_enc_obj,
@@ -197,7 +199,7 @@ def predict(**kwargs):
 #                 "SS Pri Award Eff Date": None,
 #                 "Pre-Ex Outcome": "Y",
 #                 "Claim Status Category": "ACTIVE",
-#                 "Primary Diagnosis Code": "M51.27",
+#                 "Primary Diagnosis Code": "R46.89",
 #                 "Voc Rehab Status": None,
 #                 "Claim Cause Desc": "OTHER ACCIDENT",
 #                 "Insured Salary Ind": "BI-WEEKLY",
