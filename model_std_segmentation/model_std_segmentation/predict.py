@@ -1,6 +1,7 @@
 def predict(**kwargs):
     import functools
 
+    import joblib
     import numpy as np
     import pandas as pd
 
