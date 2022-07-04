@@ -1,7 +1,6 @@
 def predict(**kwargs):
     import functools
 
-    import joblib
     import numpy as np
     import pandas as pd
 
@@ -89,8 +88,7 @@ def predict(**kwargs):
         return df
 
     artifacts = download_model_from_s3(model_bucket, model_key)
-    # with open("./data/combined_artifacts_120k.sav", "rb") as f:
-    #     artifacts = joblib.load(f)
+
     (
         robust_scaler_obj,
         catboost_enc_obj,
@@ -104,6 +102,7 @@ def predict(**kwargs):
     bkp_df = input_data.copy()
     claim_no = input_data["Claim Identifier"]
     pd_code = input_data["Primary Diagnosis Code"]
+    pd_cat = input_data["Primary Diagnosis Category"]
 
     filter_data_fns = _compose(
         _payment_date_filter,
@@ -138,15 +137,16 @@ def predict(**kwargs):
     df["predictedProbability"] = class_confidence
     df["Claim Identifier"] = claim_no
     df["pdCode"] = pd_code
+    df["Primary Diagnosis Category"] = pd_cat
 
     payload = _generate_payload(_output_transform_logic(df))
-    if df.loc[0, "pdCode"] == "Mental and Nervous Disorder":
+    if df.loc[0, "Primary Diagnosis Category"] == "MENTAL & NERVOUS DISORDERS":
         payload = _generate_payload(_output_transform_apply(df, tier=3))
     return payload
 
 
 # example input
-#
+
 # print(
 #     predict(
 #         model_name="model_std_segmentation",
@@ -199,7 +199,7 @@ def predict(**kwargs):
 #                 "SS Pri Award Eff Date": None,
 #                 "Pre-Ex Outcome": "Y",
 #                 "Claim Status Category": "ACTIVE",
-#                 "Primary Diagnosis Code": "R46.89",
+#                 "Primary Diagnosis Code": "R18",
 #                 "Voc Rehab Status": None,
 #                 "Claim Cause Desc": "OTHER ACCIDENT",
 #                 "Insured Salary Ind": "BI-WEEKLY",
@@ -221,7 +221,7 @@ def predict(**kwargs):
 #                 "Occ Code": None,
 #                 "Approval Date": "02/23/2021",
 #                 "SS Awarded Date": None,
-#                 "Primary Diagnosis Category": "Diseases of the musculoskeletal system & connectiv",
+#                 "Primary Diagnosis Category": "MENTAL & NERVOUS DISORDERS",
 #                 "Taxable Pct": 0,
 #                 "RTW Date": None,
 #                 "Eligibility Outcome": "Approved",
