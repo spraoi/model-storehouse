@@ -103,14 +103,10 @@ def _fix_nurse_date(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def _filter_bank_two(df: pd.DataFrame) -> pd.DataFrame:
-    if not df["Policy Effective Date"].isnull().bool():
-        df = df[df["Loss Date"] > df["Policy Effective Date"]]
-    if not df["Policy Termination Date"].isnull().bool():
-        df = df[~(df["Loss Date"] > df["Policy Termination Date"])]
-    if not df["Approval Date"].isnull().bool():
-        df = df[~(df["Loss Date"] > df["Approval Date"])]
-    if not df["Closed Date"].isnull().bool():
-        df = df[~(df["Loss Date"] > df["Closed Date"])]
+    df = df[df["Loss Date"] > df["Policy Effective Date"]]
+    df = df[~(df["Loss Date"] > df["Policy Termination Date"])]
+    df = df[~(df["Loss Date"] > df["Approval Date"])]
+    df = df[~(df["Loss Date"] > df["Closed Date"])]
 
     return df
 
@@ -150,10 +146,21 @@ def _check_na_counts_thresh(df: pd.DataFrame, thresh: int = 5) -> int:
     )
     test_na_sum_cat = df[categorical_cols].isnull().any().sum()
     if test_na_sum_date + test_na_sum_cat > thresh:
-        logging.info("too many NaN values while comparing with threshold")
+        logging.error("too many NaN values while comparing with threshold")
         logging.info(test_na_sum_date + test_na_sum_cat)
         df["bad_data"] = 1
         return df
+    mandatory_date_cols = [
+        "Policy Termination Date",
+        "Policy Effective Date",
+        "Loss Date",
+        "Approval Date",
+        "Closed Date",
+    ]
+    df = df.dropna(subset=mandatory_date_cols)
+    if _check_for_no_data(df):
+        logging.error("essential date cols null")
+        df["bad_data"] = 1
     df["bad_data"] = 0
     return df
 
