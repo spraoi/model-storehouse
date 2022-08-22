@@ -57,7 +57,6 @@ def _check_for_no_data(df: pd.DataFrame, hint: str = None) -> int:
 
 
 def _payment_date_filter(df: pd.DataFrame) -> pd.DataFrame:
-    # if df["Last Payment To Date"].isna().bool()
     return df[~(df["Last Payment To Date"] < df["First Payment From Date"])]
 
 
