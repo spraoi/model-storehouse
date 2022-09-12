@@ -114,6 +114,9 @@ def pre_process_data(df):
         + CATEGORICAL
         + ["Primary Diagnosis Code", "Primary Diagnosis Desc"]
     )
+#temp_fix for ai claims demo
+    if 'SocialSecurityPrimaryAwardType' not in df.columns:
+        df['SocialSecurityPrimaryAwardType'] = None
 
     settlement_df = df[COLUMNS].copy()
     settlement_df = resolve_formatting(settlement_df, DATES, NUMERIC)
