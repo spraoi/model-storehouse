@@ -102,7 +102,6 @@ def pre_process_data(df):
         "Primary Diagnosis Category",
         "DOT Exertion Level (Primary)",
         "SS Pri Award Amt",
-        "SocialSecurityPrimaryAwardType",
         "Coverage Code",
         "SIC Code",
     ]
@@ -114,9 +113,6 @@ def pre_process_data(df):
         + CATEGORICAL
         + ["Primary Diagnosis Code", "Primary Diagnosis Desc"]
     )
-#temp_fix for ai claims demo
-    if 'SocialSecurityPrimaryAwardType' not in df.columns:
-        df['SocialSecurityPrimaryAwardType'] = None
 
     settlement_df = df[COLUMNS].copy()
     settlement_df = resolve_formatting(settlement_df, DATES, NUMERIC)
@@ -406,7 +402,6 @@ def map_categories(df):
         "pd_code_1",
         "pd_code_2",
         "DOT Exertion Level (Primary)",
-        "SocialSecurityPrimaryAwardType",
         "Primary Diagnosis Code",
         "Insured Salary Ind",
         "days_to_first_payment",
