@@ -1,10 +1,10 @@
 [tool.poetry]
 name = "model_ffm"
-version = "0.2.0"
+version = "0.2.4"
 description = "Model FFM"
-authors = ["Teja <teja@spraoi.ai>"]
+authors = ["Tariq <tariqmohamed@fineos.com>"]
 maintainers = [
-    "TBD <TBD@spraoi.ai>",
+    "Tariq <tariqmohamed@fineos.com>",
 ]
 license = "Proprietary"
 classifiers = [
