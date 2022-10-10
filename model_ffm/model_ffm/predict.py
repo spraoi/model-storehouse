@@ -8,7 +8,9 @@ def predict(**kwargs):
     import onnxruntime
     import logging
 
-    logging.basicConfig(level=logging.DEBUG)
+#     logging.basicConfig(level=logging.DEBUG)
+    logging = logging.getLogger("airflow.task")
+
 
     dataset_id = kwargs.get("inputs").get("datasetId")
     logging.debug(f'{dataset_id}')
