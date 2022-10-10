@@ -6,8 +6,12 @@ def predict(**kwargs):
     import pkg_resources
     import re
     import onnxruntime
+    import logging
+
+    logging.basicConfig(level=logging.DEBUG)
 
     dataset_id = kwargs.get("inputs").get("datasetId")
+    logging.debug(f'{dataset_id}')
 
     if not kwargs.get("inputs").get("columns"):
         return [
@@ -27,6 +31,7 @@ def predict(**kwargs):
         # with open('data/' + name + '2.4.6.pkl', 'rb') as f:
         #     a = pickle.load(f)
         a = joblib.load(res_loc)
+        logging.debug(f'{len(head_dict)}')
         return a
 
     def filter_bank(df):
@@ -254,6 +259,7 @@ def predict(**kwargs):
     predictions_test.append(predictions_test_2)
 
     r1_len = len(all_columns)
+    logging.debug(f'{r1_len}')
 
     p1_test = np.argmax(np.array(predictions_test[0]).reshape(r1_len, -1), axis=1)
     p2_test = np.argmax(np.array(predictions_test[1]).reshape(r1_len, -1), axis=1)
@@ -317,6 +323,7 @@ def predict(**kwargs):
         for header, pred in item.items()
     ]
     # print(f"{pred_labels=}")
+    logging.debug(f'{pred_labels}')
     return [
         {
             "inputDataSource": f"{dataset_id}:0",
