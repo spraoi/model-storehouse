@@ -29,7 +29,7 @@ def predict(**kwargs):
         return np.pad(A, pad_width=(t, 0), mode="constant")
 
     def read_objs(name):
-        res_loc = pkg_resources.resource_stream("model_ffm", "data/" + name + "2.4.6" +".joblib")
+        res_loc = pkg_resources.resource_stream("model_ffm", "data/" + name + "2.4.6.pkl")
         # with open('data/' + name + '2.4.6.pkl', 'rb') as f:
         #     a = pickle.load(f)
         a = joblib.load(res_loc)
