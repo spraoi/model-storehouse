@@ -33,7 +33,7 @@ def predict(**kwargs):
         # with open('data/' + name + '2.4.6.pkl', 'rb') as f:
         #     a = pickle.load(f)
         a = joblib.load(res_loc)
-        logging.debug(f'{len(head_dict)}')
+        logging.debug(f'{len(a)}')
         return a
 
     def filter_bank(df):
