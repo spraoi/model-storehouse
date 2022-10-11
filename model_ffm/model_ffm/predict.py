@@ -6,15 +6,8 @@ def predict(**kwargs):
     import pkg_resources
     import re
     import onnxruntime
-    import logging
-
-#     logging.basicConfig(level=logging.DEBUG)
-    logging = logging.getLogger("airflow.task")
-
 
     dataset_id = kwargs.get("inputs").get("datasetId")
-    logging.debug(f'{dataset_id}')
-
     if not kwargs.get("inputs").get("columns"):
         return [
             {
@@ -24,16 +17,13 @@ def predict(**kwargs):
             }
         ]
 
-    def padarray(A):
-        t = 16 - len(A)
-        return np.pad(A, pad_width=(t, 0), mode="constant")
+    # def padarray(A):
+    #     t = 16 - len(A)
+    #     return np.pad(A, pad_width=(t, 0), mode="constant")
 
     def read_objs(name):
         res_loc = pkg_resources.resource_stream("model_ffm", "data/" + name + "2.4.6.pkl")
-        # with open('data/' + name + '2.4.6.pkl', 'rb') as f:
-        #     a = pickle.load(f)
         a = joblib.load(res_loc)
-        logging.debug(f'{len(a)}')
         return a
 
     def filter_bank(df):
@@ -261,7 +251,6 @@ def predict(**kwargs):
     predictions_test.append(predictions_test_2)
 
     r1_len = len(all_columns)
-    logging.debug(f'{r1_len}')
 
     p1_test = np.argmax(np.array(predictions_test[0]).reshape(r1_len, -1), axis=1)
     p2_test = np.argmax(np.array(predictions_test[1]).reshape(r1_len, -1), axis=1)
@@ -325,7 +314,6 @@ def predict(**kwargs):
         for header, pred in item.items()
     ]
     # print(f"{pred_labels=}")
-    logging.debug(f'{pred_labels}')
     return [
         {
             "inputDataSource": f"{dataset_id}:0",
