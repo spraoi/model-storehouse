@@ -191,13 +191,13 @@ def predict(**kwargs):
 
     # load wordPiece tokenizer
     tokenizer = pkg_resources.resource_stream(
-        "model_ffm", "data/p2_tokenizer_BERT_WP_v2.2.1.joblib"
+        "model_ffm", "data/tokenzier_v2.4.6.joblib"
     )
     bert_wp_loaded = joblib.load(tokenizer)
 
     # load trained model
     fp = pkg_resources.resource_filename(
-        "model_ffm", "data/ffm_model_torch_v2.2.1.onnx"
+        "model_ffm", "data/ffm_model_torch_v2.4.6.onnx"
     )
     loaded_model = onnxruntime.InferenceSession(fp)
 
@@ -329,6 +329,8 @@ def predict(**kwargs):
 # if __name__ == "__main__":
 #     columns = [
 #         "Dependent CHILD #3 SSN",
+#         "Member_Information_Last_Name",
+#         "Child_information_(1_age",
 #         "Child#1 DOB",
 #         "Child 2 DOB",
 #         "Ch1.LastName",
