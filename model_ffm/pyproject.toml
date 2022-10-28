@@ -20,12 +20,12 @@ include = ["model_ffm/data/*"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-pandas = "~1.2"
-onnxruntime = "~1.11"
-numpy = "~1.22"
+pandas = "~1.5"
+onnxruntime = "1.13.1"
+numpy = "~1.23"
 inflection = "~0.5"
-joblib = "~1.0"
-tokenizers = "~0.10"
+joblib = "~1.2"
+tokenizers = "~0.13"
 werkzeug = "0.*"
 
 [build-system]
