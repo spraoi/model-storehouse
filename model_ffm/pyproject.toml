@@ -26,8 +26,7 @@ numpy = "~1.23"
 inflection = "~0.5"
 joblib = "~1.2"
 tokenizers = "~0.13"
-markupsafe= "~2.1"
-werkzeug = "~2.2"
+werkzeug = "1.*"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
