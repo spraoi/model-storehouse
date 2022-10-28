@@ -5,6 +5,7 @@ def predict(**kwargs):
     import pkg_resources
     import re
     import onnxruntime
+    import joblib
 
     ARTIFACT_VERSION = "2.4.6"
     MAX_SEQ_LENGTH = 16
