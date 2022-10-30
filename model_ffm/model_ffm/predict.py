@@ -14,6 +14,8 @@ def predict(**kwargs):
     dep_pattern = r"^dependent(-\d)?"
     child_pattern = r"^.+(\d)"
     emp_address_pattern = r"^employee_address(_\d)?"
+    blank_pattern = r"^blank_header_\d+$"
+    PATTERN_BLANK = re.compile(blank_pattern)
     PATTERN_DEP = re.compile(dep_relation_pattern)
     PATTERN_DEP1 = re.compile(dep_pattern)
     PATTERN_CHILD = re.compile(child_pattern)
@@ -309,10 +311,9 @@ def predict(**kwargs):
         for ll, cl in zip(new_labels, confidences)  # noqa
     ]
     pred_list = [{entity: prediction} for entity, prediction in zip(all_columns, res)]
-    pattern = re.compile("^blank_header_\d+$")
     unknown_triplet = [("UNK", 1.0), ("UNK", 1.0), ("UNK", 1.0)]
     prediction_list = [
-        {header: unknown_triplet if pattern.match(header) else pred}
+        {header: unknown_triplet if PATTERN_BLANK.match(header) else pred}
         for item in pred_list
         for header, pred in item.items()
     ]
