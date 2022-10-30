@@ -8,13 +8,16 @@ def predict(**kwargs):
     import joblib
 
     ARTIFACT_VERSION = "2.4.6"
-    MAX_SEQ_LENGTH = 16
-    # regex patterns for post prediction logic
-    PATTERN_DEP = re.compile("^dependent_relationship_dependent.+(\d)")
-    PATTERN_DEP1 = re.compile("^dependent(-\d)?")
-    PATTERN_CHILD = re.compile("^.+(\d)")
-    PATTERN_EMP_ADD = re.compile("^employee_address(_\d)?")
-
+    MAX_SEQ_LENGTH = 16  # Padding threshold
+    # Regex patterns for post prediction logic
+    dep_relation_pattern = r"^dependent_relationship_dependent.+(\d)"
+    dep_pattern = r"^dependent(-\d)?"
+    child_pattern = r"^.+(\d)"
+    emp_address_pattern = r"^employee_address(_\d)?"
+    PATTERN_DEP = re.compile(dep_relation_pattern)
+    PATTERN_DEP1 = re.compile(dep_pattern)
+    PATTERN_CHILD = re.compile(child_pattern)
+    PATTERN_EMP_ADD = re.compile(emp_address_pattern)
 
     dataset_id = kwargs.get("inputs").get("datasetId")
     if not kwargs.get("inputs").get("columns"):
@@ -27,6 +30,9 @@ def predict(**kwargs):
         ]
 
     def read_objs(name):
+        """
+        Return the prediction to target mapping object.
+        """
         res_loc = pkg_resources.resource_stream(
             "model_ffm", f"data/{name}{ARTIFACT_VERSION}.pkl"
         )
@@ -34,6 +40,9 @@ def predict(**kwargs):
         return a
 
     def filter_bank(df):
+        """
+        Perform client specific prediction remap and return a dataframe.
+        """
         mask = (df["ent"].isin(["UNK"])) & ~df["head"].isin(
             ["GroupNumber", "AccountNumber"]
         )
@@ -157,6 +166,9 @@ def predict(**kwargs):
         return df
 
     def regex_filter_bank(row):
+        """
+        Remaps prediction using regex filters on each data instance(row).
+        """
         match_obj_emp_add = PATTERN_EMP_ADD.match(row["base"].lower())
 
         if PATTERN_DEP.match(row["base"].lower()):
@@ -188,13 +200,13 @@ def predict(**kwargs):
     head_dict = read_objs("head_dict")
     party_dict = read_objs("entity_dict")
 
-    # load wordPiece tokenizer
+    # Load BERT wordPiece tokenizer
     tokenizer = pkg_resources.resource_stream(
         "model_ffm", f"data/tokenzier_v{ARTIFACT_VERSION}.joblib"
     )
     bert_wp_loaded = joblib.load(tokenizer)
 
-    # load trained model
+    # Load and init torch/onnx model
     fp = pkg_resources.resource_filename(
         "model_ffm", f"data/ffm_model_torch_v{ARTIFACT_VERSION}.onnx"
     )
@@ -209,13 +221,14 @@ def predict(**kwargs):
 
     token_ids_test = []
     processed_cols = []
+    # Preprocess and tokenize the character sequence
     for column in all_columns:
         column = humanize(underscore(column))
         processed_cols.append(column)
         token_ids_test.append(bert_wp_loaded.encode(column).ids)
 
     pred = []
-
+    # Pre-pad and prune sequences with 16 characters as a threshold
     for token_id in token_ids_test:
         t = MAX_SEQ_LENGTH - len(token_id)
         if t >= 0:
@@ -242,7 +255,7 @@ def predict(**kwargs):
     predictions_test.append(predictions_test_2)
 
     run_len = len(all_columns)
-
+    # Mapping model prediction to targets
     p1_test = np.argmax(np.array(predictions_test[0]).reshape(run_len, -1), axis=1)
     p2_test = np.argmax(np.array(predictions_test[1]).reshape(run_len, -1), axis=1)
     p3_test = np.argmax(np.array(predictions_test[2]).reshape(run_len, -1), axis=1)
@@ -250,7 +263,7 @@ def predict(**kwargs):
     prod_label = np.array([prod_dict[x] for x in p1_test]).reshape((-1, 1))
     header_label = np.array([head_dict[x] for x in p2_test]).reshape((-1, 1))
     entity_label = np.array([party_dict[x] for x in p3_test]).reshape((-1, 1))
-
+    # Load and init standalone softmax layer
     fp_1 = pkg_resources.resource_filename("model_ffm", "data/softmax.onnx")
     softmax_layer = onnxruntime.InferenceSession(fp_1)
     input_name_x = softmax_layer.get_inputs()[0].name
@@ -284,7 +297,7 @@ def predict(**kwargs):
         (prod_confidence, header_confidence, entity_confidence)
     ).tolist()
 
-    # Apply new mapping (local_build:2.4.6)
+    # Apply post prediction mapping (local_build:2.4.6)
 
     prediction_df = pd.DataFrame(pred_labels, columns=["prod", "head", "ent"])
     prediction_df["base"] = all_columns
@@ -303,16 +316,12 @@ def predict(**kwargs):
         for item in pred_list
         for header, pred in item.items()
     ]
-    # print(f"{pred_labels=}")
     return [
         {
             "inputDataSource": f"{dataset_id}:0",
             "entityId": f"{dataset_id}",
-            # "entityId": f"{dataset_id}:{list(pr.keys())[0]}",
             "predictedResult": prediction_list,
-            # "predictedResult": pr,
         }
-        # for pr in prediction_list
     ]
 
 
