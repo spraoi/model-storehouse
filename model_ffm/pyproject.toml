@@ -24,7 +24,7 @@ tensorflow = "~2.5"
 pandas = "~1.2"
 numpy = "~1.19"
 inflection = "~0.5"
-joblib = "~1.0"
+joblib = "~1.2"
 tokenizers = "~0.10"
 werkzeug = "0.*"
 
