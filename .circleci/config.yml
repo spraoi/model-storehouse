@@ -1,0 +1,52 @@
+version: 2.1
+orbs:
+  aws-cli: circleci/aws-cli@1.0.0
+  aws-s3: circleci/aws-s3@3.0
+
+commands:
+  install-awscliv2:
+    description: Install AWS CLI2
+    steps:
+      - run:
+          name: Install AWS CLI2
+          command: |
+            curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+            aws --version
+
+jobs:
+  s3_sync:
+    docker:
+      - image: cimg/python:3.6
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_PASSWORD
+    parameters:
+      s3-bucket:
+        description: Path of the s3 bucket to store the backup
+        type: string
+        default: NA
+      branch-master:
+        description: Name of the branch to back up code from
+        type: boolean
+        default: false
+    steps:
+      - checkout
+      - install-awscliv2
+      - run:
+          name: zip & sync repo to s3
+          command: |
+            a=$(date +%Y%m%d%H%M%S).zip
+            zip -r $a . -x '/.git*' '/.github/*' '/aws/*' '/awscliv2.zip*'
+            aws s3 sync . <<parameters.s3-bucket>> --exclude "*" --include "$a"
+
+workflows:
+  - s3_sync:
+      name: barrel_s3_sync_master
+      context: barrel-context
+      s3-bucket: s3://spr-backup-repos/barrel/model-storehouse/model-storehouse-master
+      branch-master: true
+      filters:
+        branches:
+          only: master
