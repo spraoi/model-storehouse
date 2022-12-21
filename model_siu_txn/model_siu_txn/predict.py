@@ -207,6 +207,8 @@ def predict(**kwargs):
 
     return [
         {
+            "inputDataSource": f"RANDN1209:0",
+            "entityId": 'RAND1209',
             "predictedResult": predicted_claim,
         }
     ]
