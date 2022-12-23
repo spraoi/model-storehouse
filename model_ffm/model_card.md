@@ -17,6 +17,49 @@ date: 23/Dec/2022
    
    ![Model arch](./ffm_model_torch_v2.4.6.png)
 
+## Model Parameters:
+    
+    For model params please see below initialization:
+
+```
+        self.emb_input_dim = len(tokenizer.get_vocab()) + 1
+        self.emb_output_dim = 256
+        self.emb_input = nn.Embedding(self.emb_input_dim, self.emb_output_dim)
+
+        self.learning_rate = 0.0023791641586627336
+
+        self.embed_dropout = nn.Dropout(p=0.05986875790171131)
+        self.prod_dropout = nn.Dropout(p=0.03275736918917843)
+        self.party_dropout_1 = nn.Dropout(p=0.4257879128715356)
+        self.party_dropout_2 = nn.Dropout(p=0.15397592235260282)
+        self.datum_dropout_1 = nn.Dropout(p=0.4062719799139764)
+        self.datum_dropout_2 = nn.Dropout(p=0.0023791641586627336)
+
+        self.lstm_party_1 = nn.LSTM(
+            input_size=self.emb_output_dim, hidden_size=64, batch_first=True
+        )
+        self.lstm_prod_2 = nn.LSTM(
+            input_size=self.emb_output_dim, hidden_size=64, batch_first=True
+        )
+        self.lstm_party_1_1 = nn.LSTM(input_size=64, hidden_size=64, batch_first=True)
+        self.lstm_prod_2_1 = nn.LSTM(input_size=64, hidden_size=64, batch_first=True)
+
+        self.dense_party = nn.Linear(64, party_class_size)
+        self.dense_prod = nn.Linear(64, prod_class_size)
+
+        self.bilstm_1 = nn.LSTM(
+            input_size=self.emb_output_dim,
+            hidden_size=32,
+            batch_first=True,
+            bidirectional=True,
+        )
+        self.bilstm_2 = nn.LSTM(
+            input_size=64, hidden_size=64, batch_first=True, bidirectional=True
+        )
+
+        self.layer_norm = nn.LayerNorm(64)
+        self.dense_main = nn.Linear(128, target_class_size)
+```
 
 ## Model Performance Metrics:
 
