@@ -119,7 +119,7 @@ def predict(**kwargs):
         df["emp_level_19"] = df[emp_col].apply(lambda x: 1 if "110btw" in x else 0)
         df["emp_level_20"] = df[emp_col].apply(lambda x: 1 if "470knx" in x else 0)
 
-        df["no_employees"] = df[emp_col].apply(lambda x: x.count(",") + 1)
+        df["no_employees"] = df[emp_col].apply(lambda x: len(x.split(",")))
 
         emp_level_cols = [
             "emp_level_1",
