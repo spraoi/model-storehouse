@@ -272,7 +272,7 @@ def predict(**kwargs):
 
 # print(
 #     predict(
-#         model_name="SIU_TXN_model_v5",
+#         model_name="SIU_APPN_model_v5",
 #         artifact=[
 #             {
 #                 "dataId": "55dcc659-d0c5-42aa-b9bf-a0325a2997b9",
