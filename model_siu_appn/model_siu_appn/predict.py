@@ -263,7 +263,7 @@ def predict(**kwargs):
 
     return [
         {
-            "inputDataSource": f"RANDN1209:0",  # temporarily present for payload schema restriction
+            "inputDataSource": "RANDN1209:0",  # temporarily present for payload schema restriction
             "entityId": "RAND1209",  # temporarily present for payload schema restriction
             "predictedResult": predicted_claim,
         }
