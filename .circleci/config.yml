@@ -42,11 +42,13 @@ jobs:
             aws s3 sync . <<parameters.s3-bucket>> --exclude "*" --include "$a"
 
 workflows:
-  - s3_sync:
-      name: barrel_s3_sync_master
-      context: barrel-context
-      s3-bucket: s3://spr-backup-repos/barrel/model-storehouse/model-storehouse-master
-      branch-master: true
-      filters:
-        branches:
-          only: master
+  build-and-deploy:
+    jobs:
+      - s3_sync:
+          name: barrel_s3_sync_master
+          context: barrel-context
+          s3-bucket: s3://spr-backup-repos/barrel/model-storehouse/model-storehouse-master
+          branch-master: true
+          filters:
+            branches:
+              only: master
