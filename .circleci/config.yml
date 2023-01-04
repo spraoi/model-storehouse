@@ -51,4 +51,4 @@ workflows:
           branch-master: true
           filters:
             branches:
-              only: feat/s3_sync_v2
+              only: master
