@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "model_siu_txn"
+name = "model_siu_appn"
 version = "0.1.0"
 description = "model predict code"
 authors = ["tariq-mohamed <Tariq.Mohamed@FINEOS.com>"]
