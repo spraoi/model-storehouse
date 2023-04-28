@@ -4,12 +4,7 @@ def predict(**kwargs):
     import json
     import functools
 
-    cat_vars = [
-        "Insured Gender",
-        "Primary Diagnosis Category",
-        "Occ Category",
-        "SIC Category",
-    ]
+    cat_vars = ['Insured Gender', 'Occ Category', 'SIC Category', 'Claim State']
 
     def to_date(df, column_list):
         for col in column_list:
@@ -80,40 +75,25 @@ def predict(**kwargs):
         return ddf
 
     def filter_data_bank_2(ddf):
-        ddf = ddf.dropna(how="any", subset=["Claim Identifier"])
-        ddf = ddf[ddf["First Payment From Date"] != ""]
-        ddf = ddf[~(ddf["Loss Date"] > ddf["First Payment From Date"])]
+        ddf = ddf.dropna(how='any', subset=['Claim Identifier'])
+        ddf = ddf[ddf['First Payment From Date'] != '']
+        ddf = ddf[~(ddf['Loss Date'] > ddf['First Payment From Date'])]
         return ddf
 
     def filter_data_diag_code(ddf):
-        exclude_disgnosis_code_list = [
-            "G43",
-            "G43.0",
-            "G43.001",
-            "G43.909",
-            "650",
-            "650A",
-            "650a",
-        ]
-        ddf = ddf[~ddf["Primary Diagnosis Code"].isin(exclude_disgnosis_code_list)]
-        ddf = ddf[
-            (ddf["Primary Diagnosis Code"] != "O80")
-            & (ddf["Primary Diagnosis Code"] != "650")
-        ]
+        ddf = ddf[(ddf['Primary Diagnosis Code'] == '650')]
         return ddf
 
     def filter_data_model_specific(ddf):
-        ddf = ddf[
-            (ddf["Primary Diagnosis Category"] != "Unknown")
-            | (ddf["Primary Diagnosis Category"] != "Unspecified")
-        ]
-        ddf = ddf[ddf["SIC Category"] != "Unknown"]
-        ddf = ddf[ddf["Insured Gender"] != ""]
-        ddf = ddf[ddf["Occ Category"] != ""]
-        ddf = ddf.dropna(subset=["Insured Age at Loss"])
-        ddf = ddf.dropna(
-            how="any", subset=["Insured Gender", "Occ Category", "Insured Age at Loss"]
-        )
+        ddf = ddf[(ddf['Primary Diagnosis Category'] != 'Unknown') |
+                  (ddf['Primary Diagnosis Category'] != 'Unspecified')]
+        ddf = ddf[ddf['SIC Category'] != 'Unknown']
+        ddf = ddf[ddf['Insured Gender'] != '']
+        ddf = ddf[ddf['Occ Category'] != '']
+        ddf = ddf[ddf['Claim State'] != '']
+        ddf = ddf.dropna(subset=['Insured Age at Loss'])
+        ddf = ddf.dropna(how='any', subset=['Insured Gender', 'Occ Category', 'Insured Age at Loss', 'Claim State',
+                                            'Insured Annualized Salary'])
         return ddf
 
     def test_train_match(train_template, pred_data):
@@ -133,7 +113,7 @@ def predict(**kwargs):
     data.loc[:, "Primary Diagnosis Category"] = data[
         "Primary Diagnosis Category"
     ].str.upper()
-
+    data[['Insured Annualized Salary']] = data[['Insured Annualized Salary']].astype('int')
     filter_data_fns = _compose(
         fix_dates,
         set_type_age,
@@ -144,29 +124,12 @@ def predict(**kwargs):
     )
     data = filter_data_fns(data)
 
-    prediction_df = data[
-        [
-            "Insured Gender",
-            "Insured Age at Loss",
-            "Primary Diagnosis Category",
-            "Occ Category",
-            "SIC Category",
-        ]
-    ]
+    prediction_df = data[['Insured Gender', 'Insured Age at Loss',  'Occ Category', 'SIC Category', 'Claim State', 'Insured Annualized Salary']]
     prediction_df.loc[:, cat_vars] = prediction_df[cat_vars].astype("category")
-    prediction_df = pd.get_dummies(
-        prediction_df[
-            [
-                "Insured Gender",
-                "Insured Age at Loss",
-                "Primary Diagnosis Category",
-                "Occ Category",
-                "SIC Category",
-            ]
-        ]
-    )
+    prediction_dummies_df = pd.get_dummies(prediction_df[cat_vars])
+    prediction_df = pd.concat([prediction_dummies_df, prediction_df[['Insured Annualized Salary']]], axis=1)
 
-    with open("./model_a_artifact.pkl", "rb") as f:
+    with open("./model_b_artifact.pkl", "rb") as f:
         xgb_cl, cols_list = pickle.load(f)
 
     prediction_df = test_train_match(cols_list, prediction_df)
@@ -188,7 +151,6 @@ def predict(**kwargs):
             ],
         }
     ]
-
 
 # print(
 #     predict(
@@ -233,7 +195,7 @@ def predict(**kwargs):
 #                 "SS Pri Award Eff Date": None,
 #                 "Pre-Ex Outcome": "Y",
 #                 "Claim Status Category": "ACTIVE",
-#                 "Primary Diagnosis Code": "D86.85",
+#                 "Primary Diagnosis Code": "650",
 #                 "Voc Rehab Status": None,
 #                 "Claim Cause Desc": "OTHER ACCIDENT",
 #                 "Insured Salary Ind": "BI-WEEKLY",
