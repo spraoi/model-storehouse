@@ -1,10 +1,10 @@
 [tool.poetry]
 name = "model_ffm"
-version = "0.1.9"
+version = "3.0.0"
 description = "Model FFM"
-authors = ["Teja <teja@spraoi.ai>"]
+authors = ["Tariq <tariqmohamed@fineos.com>"]
 maintainers = [
-    "TBD <TBD@spraoi.ai>",
+    "Tariq <tariqmohamed@fineos.com>",
 ]
 license = "Proprietary"
 classifiers = [
@@ -20,15 +20,14 @@ include = ["model_ffm/data/*"]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-tensorflow = "~2.5"
-pandas = "~1.2"
-numpy = "~1.19"
+pandas = "~1.5"
+onnxruntime = "1.13.1"
+numpy = "~1.23"
 inflection = "~0.5"
-joblib = "~1.0"
-tokenizers = "~0.10"
+joblib = "~1.2"
+tokenizers = "~0.13"
 werkzeug = "0.*"
 
-
 [build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
