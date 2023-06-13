@@ -1,4 +1,13 @@
 def predict(**kwargs):
+    """Generate predictions for input data
+
+    Returns:
+        list: A list of dictionaries representing the prediction data.
+              Each dictionary contains the following keys:
+              - inputDataSource (string): Dataset Id
+              - entityId (string): Entity Id
+              - predictedResult (list): A list of prediction results
+    """
     import pandas as pd
     import numpy as np
     from inflection import humanize, underscore
@@ -32,8 +41,13 @@ def predict(**kwargs):
         ]
 
     def read_objs(name):
-        """
-        Return the prediction to target mapping object.
+        """Load the prediction to target mapping object.
+
+        Args:
+            name (string): A string containing the name of the object file
+
+        Returns:
+            dict: A dictionary of prediction id to target mapping
         """
         res_loc = pkg_resources.resource_stream(
             "model_ffm", f"data/{name}{ARTIFACT_VERSION}.pkl"
@@ -42,8 +56,13 @@ def predict(**kwargs):
         return a
 
     def filter_bank(df):
-        """
-        Perform client specific prediction remap and return a dataframe.
+        """Apply DBN specific prediction remapping on entire dataframe
+
+        Args:
+            df (pandas.DataFrame): A dataframe containing predictions
+
+        Returns:
+            pandas.DataFrame: A dataframe containing remapped predictions
         """
         mask = (df["ent"].isin(["UNK"])) & ~df["head"].isin(
             ["GroupNumber", "AccountNumber"]
@@ -55,91 +74,91 @@ def predict(**kwargs):
         mask_8 = (df["base"].isin(["Employee_Address"])) & (df["head"] == "Zip")
         mask_10 = df["base"].isin(["Class/Set"])
         mask_13 = (df["base"].isin(["Employee_Address_3"])) & (
-            df["head"] == "AddressLine3"
+                df["head"] == "AddressLine3"
         )
         mask_14 = df["head"] == "GF_BenefitAmount"
         mask_17 = (
-            df["base"].isin(
-                [
-                    "Supplemental/Voluntary_Employee_Life_In_Force_Amount",
-                    "Supplemental/Voluntary_Employee_Life_Applied_For_Amount",
-                ]
-            )
-        ) & (df["prod"] == "LIFESUP")
+                      df["base"].isin(
+                          [
+                              "Supplemental/Voluntary_Employee_Life_In_Force_Amount",
+                              "Supplemental/Voluntary_Employee_Life_Applied_For_Amount",
+                          ]
+                      )
+                  ) & (df["prod"] == "LIFESUP")
         mask_18 = (
-            df["base"].isin(
-                [
-                    "Supplemental/Voluntary_Employee_AD&D_Applied_For_Amount",
-                    "Supplemental/Voluntary_Employee_AD&D_In_Force_Amount",
-                ]
-            )
-        ) & (df["prod"] == "ADDSUP")
+                      df["base"].isin(
+                          [
+                              "Supplemental/Voluntary_Employee_AD&D_Applied_For_Amount",
+                              "Supplemental/Voluntary_Employee_AD&D_In_Force_Amount",
+                          ]
+                      )
+                  ) & (df["prod"] == "ADDSUP")
         mask_20 = (
-            df["base"].isin(
-                [
-                    "EMPLOYEE_Voluntary/Supplemental_Coverage_LIFE_Benefit_Amount",
-                    "EMPLOYEE_Voluntary/SupplementalCoverage_LIFE_Benefit_Amount",
-                ]
-            )
-        ) & (df["prod"] == "LIFEVOL")
+                      df["base"].isin(
+                          [
+                              "EMPLOYEE_Voluntary/Supplemental_Coverage_LIFE_Benefit_Amount",
+                              "EMPLOYEE_Voluntary/SupplementalCoverage_LIFE_Benefit_Amount",
+                          ]
+                      )
+                  ) & (df["prod"] == "LIFEVOL")
         mask_21 = (
-            df["base"].isin(["Dependent_Relationship_Dependent_Relationship"])
-        ) & (df["ent"] == "Dependent")
+                      df["base"].isin(["Dependent_Relationship_Dependent_Relationship"])
+                  ) & (df["ent"] == "Dependent")
         mask_23 = (
-            (df["head"].isin(["AccountNumber"]))
-            & (df["ent"] == "Primary")
-            & (df["prod"] == "UNK")
+                (df["head"].isin(["AccountNumber"]))
+                & (df["ent"] == "Primary")
+                & (df["prod"] == "UNK")
         )
         mask_24 = (
-            (
-                df["base"].isin(
-                    ["Basic_Life_In_Force_Amount", "Basic_Life_Applied_For_Amount"]
+                (
+                    df["base"].isin(
+                        ["Basic_Life_In_Force_Amount", "Basic_Life_Applied_For_Amount"]
+                    )
                 )
-            )
-            & (df["ent"] == "Primary")
-            & (df["prod"] == "LTD")
+                & (df["ent"] == "Primary")
+                & (df["prod"] == "LTD")
         )
         mask_25 = (
-            (df["base"].isin(["Supplemental/Voluntary_Employee_Life_Effective_Date"]))
-            & (df["head"].isin(["EffectiveDate"]))
-            & (df["prod"] == "LIFESUP")
+                (df["base"].isin(["Supplemental/Voluntary_Employee_Life_Effective_Date"]))
+                & (df["head"].isin(["EffectiveDate"]))
+                & (df["prod"] == "LIFESUP")
         )
         mask_27 = (
-            (~df["prod"].isin(["UNK", "primary"]))
-            & (df["head"].isin(["BinaryResponse"]))
-            & (df["ent"] == "Primary")
+                (~df["prod"].isin(["UNK", "primary"]))
+                & (df["head"].isin(["BinaryResponse"]))
+                & (df["ent"] == "Primary")
         )
         mask_28 = (
-            (~df["prod"].isin(["UNK"]))
-            & (df["head"].isin(["UNK"]))
-            & (df["ent"] == "Primary")
+                (~df["prod"].isin(["UNK"]))
+                & (df["head"].isin(["UNK"]))
+                & (df["ent"] == "Primary")
         )
         mask_29 = (
-            (df["prod"].isin(["LIFESUP"]))
-            & (df["head"].isin(["Inforce Amount"]))
-            & (df["ent"] == "Primary")
-            & (
-                df["base"].isin(
-                    ["Supplemental/Voluntary_Employee_Life_In_Force_Amount"]
+                (df["prod"].isin(["LIFESUP"]))
+                & (df["head"].isin(["Inforce Amount"]))
+                & (df["ent"] == "Primary")
+                & (
+                    df["base"].isin(
+                        ["Supplemental/Voluntary_Employee_Life_In_Force_Amount"]
+                    )
                 )
-            )
         )
         mask_31 = (
-            (df["prod"].isin(["ADDSUP"]))
-            & (df["head"].isin(["EffectiveDate"]))
-            & (df["ent"] == "Primary")
-            & (df["base"].isin(["Supplemental/Voluntary_Employee_AD&D_Effective_Date"]))
+                (df["prod"].isin(["ADDSUP"]))
+                & (df["head"].isin(["EffectiveDate"]))
+                & (df["ent"] == "Primary")
+                & (df["base"].isin(["Supplemental/Voluntary_Employee_AD&D_Effective_Date"]))
         )
         mask_32 = (
-            (df["prod"].isin(["UNK"]))
-            & (df["head"].isin(["Zip"]))
-            & (df["ent"] == "Primary")
-            & (df["base"].isin(["Employee_Address_3"]))
+                (df["prod"].isin(["UNK"]))
+                & (df["head"].isin(["Zip"]))
+                & (df["ent"] == "Primary")
+                & (df["base"].isin(["Employee_Address_3"]))
         )
         mask_34 = (
-            (df["prod"].isin(["UNK"]))
-            & (df["head"].isin(["UNK"]))
-            & (df["ent"] == "Primary")
+                (df["prod"].isin(["UNK"]))
+                & (df["head"].isin(["UNK"]))
+                & (df["ent"] == "Primary")
         )
         mask_35 = (~df["prod"].isin(["UNK"])) & (
             df["head"].isin(
@@ -185,16 +204,21 @@ def predict(**kwargs):
         return df
 
     def regex_filter_bank(row):
-        """
-        Remaps prediction using regex filters on each data instance(row).
+        """Remaps prediction using RegEx filters on each data instance(row).
+
+        Args:
+            row (pandas.Series): A pandas series containing each prediction instance
+
+        Returns:
+            pandas.Series: A pandas series containing modified prediction instance
         """
         match_obj_emp_add = PATTERN_EMP_ADD.match(row["base"].lower())
 
         if PATTERN_DEP.match(row["base"].lower()):
             if (
-                PATTERN_DEP1.match(row["ent"].lower())
-                and row["head"] == "Relationship"
-                and row["prod"] == "UNK"
+                    PATTERN_DEP1.match(row["ent"].lower())
+                    and row["head"] == "Relationship"
+                    and row["prod"] == "UNK"
             ):
                 row["ent"] = "Child-" + PATTERN_DEP.match(row["base"].lower())[1]
 
@@ -220,12 +244,12 @@ def predict(**kwargs):
     party_dict = read_objs("entity_dict")
 
     # Load BERT wordPiece tokenizer
-    # tokenizer = pkg_resources.resource_stream(
-    #     "model_ffm", f"data/tokenzier_v{ARTIFACT_VERSION}.joblib"
-    # )
-    bert_wp_loaded = joblib.load(f"./data/tokenzier_v{ARTIFACT_VERSION}.joblib")
+    tokenizer = pkg_resources.resource_stream(
+        "model_ffm", f"data/tokenzier_v{ARTIFACT_VERSION}.joblib"
+    )
+    bert_wp_loaded = joblib.load(tokenizer)
 
-    # Load and init torch/onnx model
+    # Load and init torch/onnx model inference session
     fp = pkg_resources.resource_filename(
         "model_ffm", f"data/ffm_model_torch_v{ARTIFACT_VERSION}.onnx"
     )
@@ -255,6 +279,7 @@ def predict(**kwargs):
         else:
             i = np.array(token_id[0:16]).astype(np.int32)
         i = i.reshape(1, -1)
+        # Run predictions
         pred.append(
             loaded_model.run([label_name1, label_name2, label_name3], {input_name: i})
         )
@@ -287,7 +312,7 @@ def predict(**kwargs):
     softmax_layer = onnxruntime.InferenceSession(fp_1)
     input_name_x = softmax_layer.get_inputs()[0].name
     label_name_x = softmax_layer.get_outputs()[0].name
-
+    # apply softmax
     prob_1 = softmax_layer.run(
         [label_name_x],
         {input_name_x: np.array(predictions_test[0]).reshape(run_len, -1)},
@@ -316,8 +341,7 @@ def predict(**kwargs):
         (prod_confidence, header_confidence, entity_confidence)
     ).tolist()
 
-    # Apply post prediction mapping (local_build:2.4.6)
-
+    # Apply post prediction mapping (local_build:3.0.0)
     prediction_df = pd.DataFrame(pred_labels, columns=["prod", "head", "ent"])
     prediction_df["base"] = all_columns
     prediction_df = filter_bank(prediction_df)
@@ -341,7 +365,6 @@ def predict(**kwargs):
             "predictedResult": prediction_list,
         }
     ]
-
 
 # if __name__ == "__main__":
 #     columns = [
