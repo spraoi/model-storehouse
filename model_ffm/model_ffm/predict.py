@@ -2,7 +2,7 @@ def predict(**kwargs):
     """Generate predictions for input data
 
     Returns:
-        list: A list of dictionaries representing the prediction data.
+        List[Dict]: A list of dictionaries representing the prediction data.
               Each dictionary contains the following keys:
               - inputDataSource (string): Dataset Id
               - entityId (string): Entity Id
@@ -39,21 +39,6 @@ def predict(**kwargs):
                 "predictedResult": [],
             }
         ]
-
-    def read_objs(name):
-        """Load the prediction to target mapping object.
-
-        Args:
-            name (string): A string containing the name of the object file
-
-        Returns:
-            dict: A dictionary of prediction id to target mapping
-        """
-        res_loc = pkg_resources.resource_stream(
-            "model_ffm", f"data/{name}{ARTIFACT_VERSION}.pkl"
-        )
-        a = joblib.load(res_loc)
-        return a
 
     def filter_bank(df):
         """Apply DBN specific prediction remapping on entire dataframe
@@ -239,125 +224,190 @@ def predict(**kwargs):
 
         return row
 
-    prod_dict = read_objs("prod_dict")
-    head_dict = read_objs("head_dict")
-    party_dict = read_objs("entity_dict")
+    def load_resources(keyword, method):
+        """Load pickle, joblib or onnx serialized objects
 
-    # Load BERT wordPiece tokenizer
-    tokenizer = pkg_resources.resource_stream(
-        "model_ffm", f"data/tokenzier_v{ARTIFACT_VERSION}.joblib"
-    )
-    bert_wp_loaded = joblib.load(tokenizer)
+        Args:
+            keyword (string): Filename
+            method (string): File extension
 
-    # Load and init torch/onnx model inference session
-    fp = pkg_resources.resource_filename(
-        "model_ffm", f"data/ffm_model_torch_v{ARTIFACT_VERSION}.onnx"
-    )
-    loaded_model = onnxruntime.InferenceSession(fp)
+        Returns:
+            Any: The return value is based on the condition.
+              If the object is loaded using onnx, the loaded model along with its input dimensions and a list of output dimensions are returned.
 
-    input_name = loaded_model.get_inputs()[0].name
-    label_name1 = loaded_model.get_outputs()[0].name
-    label_name2 = loaded_model.get_outputs()[1].name
-    label_name3 = loaded_model.get_outputs()[2].name
+              If the object is loaded using pickle or joblib, the loaded object is returned.
+        """
+        # resource_loc = f"data/{keyword}{ARTIFACT_VERSION}.{method}"  # For local debug
+        resource_loc = pkg_resources.resource_stream(
+            "model_ffm", f"data/{keyword}{ARTIFACT_VERSION}.{method}"
+        )
+        if method == "onnx":
+            loaded_obj = onnxruntime.InferenceSession(resource_loc)
+            input_dim = loaded_obj.get_inputs()[0].name
+            output_dim = [
+                loaded_obj.get_outputs()[dimension].name
+                for dimension in range(0, len(loaded_obj.get_outputs()))
+            ]
+            return loaded_obj, input_dim, output_dim
+        else:
+            loaded_obj = joblib.load(resource_loc)
+            return loaded_obj
+
+    # Pre-pad and prune sequences with 16 characters as a threshold
+    def dynamic_pad_and_predict(input_tokens, max_seq_length):
+        """Dynamically pad sequences and run predictions on them
+
+        Args:
+            input_tokens (List): A list of tokens to pad and predict
+            max_seq_length (Int): Maximum sequence length limit
+
+        Returns:
+            List: A list of predictions
+        """
+
+        loaded_model,input_name,[label_name1, label_name2, label_name3] = load_resources("ffm_model_torch_v", "onnx")
+        predictions = []
+        for token in input_tokens:
+            dynamic_pad = max_seq_length - len(token)
+            if dynamic_pad >= 0:
+                padded_seq = np.pad(
+                    token, pad_width=(dynamic_pad, 0), mode="constant"
+                ).astype(np.int32)
+            else:
+                padded_seq = np.array(token[0:16]).astype(np.int32)
+            padded_seq = padded_seq.reshape(1, -1)
+            # Run predictions
+            predictions.append(
+                loaded_model.run(
+                    [label_name1, label_name2, label_name3], {input_name: padded_seq}
+                )
+            )
+        return predictions
+
+    def map_predictions_helper_max(prediction_list):
+        """Get the prediction with maximum confidence across axes. Dimension[0] equals to the size of input data
+
+        Args:
+            prediction_list (List): A list containing one of the three prediction targets
+
+        Returns:
+            np.array: Returns a numpy array containing the predicted class
+        """
+        reshaped_prediction = np.array(prediction_list).reshape(run_len, -1)
+        return np.argmax(reshaped_prediction, axis=1)
+
+    def map_confidences_helper_max(confidence_list):
+        """Generate confidence scores for each of the three targets independantly rounded of to 4 decimal places.
+
+        Args:
+            confidence_list (List): A list containing confidences of one of the three prediction targets
+
+        Returns:
+            np.array: Returns a numpy array containing confidences
+        """
+        return np.array(
+            [round(float(x), 4) for x in list(np.max(confidence_list, axis=1))]
+        ).reshape((-1, 1))
+
+    def map_predictions(predictions):
+        """Map prediction classes to their corresponding labels from training time. Uses serialized dictionaries from training time.
+
+        Args:
+            predictions (List[List, List, List]): A list of lists containing predictions of all three targets
+
+        Returns:
+            List: Returns a List of predictions mapped to their target labels.
+        """
+        product_label = np.array([prod_dict[x] for x in predictions[0]]).reshape(
+            (-1, 1)
+        )
+        header_label = np.array([head_dict[x] for x in predictions[1]]).reshape((-1, 1))
+        entity_label = np.array([party_dict[x] for x in predictions[2]]).reshape(
+            (-1, 1)
+        )
+
+        predicted_labels = np.hstack(
+            (product_label, header_label, entity_label)
+        ).tolist()
+        return predicted_labels
+
+    def map_confidences(confidences):
+        """Generate prediction confidences for each of the target axes.
+
+        Args:
+            confidences (List[List, List, List]): A list of lists containing predictions of all three targets
+
+        Returns:
+            List: Returns a list containing prediction confidences
+        """
+        softmax_layer, input_name_x, [label_name_x] = load_resources("softmax_v", "onnx")
+        probabilities = []
+        for dim in range(len(confidences)):
+            probabilities.append(
+                softmax_layer.run(
+                    [label_name_x],
+                    {input_name_x: np.array(confidences[dim]).reshape(run_len, -1)},
+                )[0]
+            )
+        probabilities = [map_confidences_helper_max(axes) for axes in probabilities]
+        return np.hstack(
+            (probabilities[0], probabilities[1], probabilities[2])
+        ).tolist()
+
+    prod_dict = load_resources("prod_dict", "pkl")
+    head_dict = load_resources("head_dict", "pkl")
+    party_dict = load_resources("entity_dict", "pkl")
+    bert_wp_loaded = load_resources("tokenzier_v", "joblib")
 
     all_columns = kwargs.get("inputs").get("columns")
 
-    token_ids_test = []
+    tokens = []
     processed_cols = []
     # Preprocess and tokenize the character sequence
     for column in all_columns:
         column = humanize(underscore(column))
         processed_cols.append(column)
-        token_ids_test.append(bert_wp_loaded.encode(column).ids)
-
-    pred = []
-    # Pre-pad and prune sequences with 16 characters as a threshold
-    for token_id in token_ids_test:
-        t = MAX_SEQ_LENGTH - len(token_id)
-        if t >= 0:
-            i = np.pad(token_id, pad_width=(t, 0), mode="constant").astype(np.int32)
-        else:
-            i = np.array(token_id[0:16]).astype(np.int32)
-        i = i.reshape(1, -1)
-        # Run predictions
-        pred.append(
-            loaded_model.run([label_name1, label_name2, label_name3], {input_name: i})
-        )
-
-    predictions_test = []
-    predictions_test_0 = []
-    predictions_test_1 = []
-    predictions_test_2 = []
-
-    for i in range(len(token_ids_test)):
-        predictions_test_0.append(pred[i][0])
-        predictions_test_1.append(pred[i][1])
-        predictions_test_2.append(pred[i][2])
-
-    predictions_test.append(predictions_test_0)
-    predictions_test.append(predictions_test_1)
-    predictions_test.append(predictions_test_2)
+        tokens.append(bert_wp_loaded.encode(column).ids)
 
     run_len = len(all_columns)
-    # Mapping model prediction to targets
-    p1_test = np.argmax(np.array(predictions_test[0]).reshape(run_len, -1), axis=1)
-    p2_test = np.argmax(np.array(predictions_test[1]).reshape(run_len, -1), axis=1)
-    p3_test = np.argmax(np.array(predictions_test[2]).reshape(run_len, -1), axis=1)
 
-    prod_label = np.array([prod_dict[x] for x in p1_test]).reshape((-1, 1))
-    header_label = np.array([head_dict[x] for x in p2_test]).reshape((-1, 1))
-    entity_label = np.array([party_dict[x] for x in p3_test]).reshape((-1, 1))
-    # Load and init standalone softmax layer
-    fp_1 = pkg_resources.resource_filename("model_ffm", "data/softmax.onnx")
-    softmax_layer = onnxruntime.InferenceSession(fp_1)
-    input_name_x = softmax_layer.get_inputs()[0].name
-    label_name_x = softmax_layer.get_outputs()[0].name
-    # apply softmax
-    prob_1 = softmax_layer.run(
-        [label_name_x],
-        {input_name_x: np.array(predictions_test[0]).reshape(run_len, -1)},
-    )[0]
-    prob_2 = softmax_layer.run(
-        [label_name_x],
-        {input_name_x: np.array(predictions_test[1]).reshape(run_len, -1)},
-    )[0]
-    prob_3 = softmax_layer.run(
-        [label_name_x],
-        {input_name_x: np.array(predictions_test[2]).reshape(run_len, -1)},
-    )[0]
+    predictions = dynamic_pad_and_predict(tokens, MAX_SEQ_LENGTH)
 
-    prod_confidence = np.array(
-        [round(float(x), 4) for x in list(np.max(prob_1, axis=1))]
-    ).reshape((-1, 1))
-    header_confidence = np.array(
-        [round(float(x), 4) for x in list(np.max(prob_2, axis=1))]
-    ).reshape((-1, 1))
-    entity_confidence = np.array(
-        [round(float(x), 4) for x in list(np.max(prob_3, axis=1))]
-    ).reshape((-1, 1))
-
-    pred_labels = np.hstack((prod_label, header_label, entity_label)).tolist()
-    confidences = np.hstack(
-        (prod_confidence, header_confidence, entity_confidence)
-    ).tolist()
+    unpacked_predictions = [
+        map_predictions_helper_max(list(axes)) for axes in list(zip(*predictions))
+    ]
+    resolved_predicted_labels = map_predictions(unpacked_predictions)
+    unpacked_confidences = [
+        (list(axes)) for axes in list(zip(*predictions))
+    ]
+    resolved_confidences = map_confidences(unpacked_confidences)
 
     # Apply post prediction mapping (local_build:3.0.0)
-    prediction_df = pd.DataFrame(pred_labels, columns=["prod", "head", "ent"])
+    prediction_df = pd.DataFrame(
+        resolved_predicted_labels, columns=["prod", "head", "ent"]
+    )
     prediction_df["base"] = all_columns
     prediction_df = filter_bank(prediction_df)
     prediction_df = prediction_df.apply(regex_filter_bank, axis=1)
     new_labels = prediction_df.values.tolist()
-    res = [
+
+    resolved_results = [
         [(a, b) for a, b in zip(ll, cl)]
-        for ll, cl in zip(new_labels, confidences)  # noqa
+        for ll, cl in zip(new_labels, resolved_confidences)  # noqa
     ]
-    pred_list = [{entity: prediction} for entity, prediction in zip(all_columns, res)]
+
+    pred_list = [
+        {entity: prediction}
+        for entity, prediction in zip(all_columns, resolved_results)
+    ]
+
     unknown_triplet = [("UNK", 1.0), ("UNK", 1.0), ("UNK", 1.0)]
     prediction_list = [
         {header: unknown_triplet if PATTERN_BLANK.match(header) else pred}
         for item in pred_list
         for header, pred in item.items()
     ]
+
     return [
         {
             "inputDataSource": f"{dataset_id}:0",
