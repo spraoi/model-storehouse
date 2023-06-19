@@ -450,25 +450,25 @@ def predict(**kwargs):
     ]
 
 
-if __name__ == "__main__":
-    columns = [
-        "Dependent CHILD #3 SSN",
-        "Member_Information_Last_Name",
-        "Child_information_(1_age",
-        "Child#1 DOB",
-        "Child 2 DOB",
-        "Ch1.LastName",
-        "ACC Effective Date",
-        "Member_Information_Employee_Benefit_Class",
-        "Employee_Address_1",
-        "Member_Information_Last_Name",
-        "blank_header_1",
-        "blank_header_20",
-    ]
-    results = predict(
-        model_name="model_ffm",
-        artifacts=["data/bert_wp_tok_updated_v2.joblib"],
-        model_path="data/FFM_new_prod_labels_v2.h5",
-        inputs={"datasetId": "spr:dataset_id", "columns": columns},
-    )
-    print(f"{results=}")
+# if __name__ == "__main__":
+#     columns = [
+#         "Dependent CHILD #3 SSN",
+#         "Member_Information_Last_Name",
+#         "Child_information_(1_age",
+#         "Child#1 DOB",
+#         "Child 2 DOB",
+#         "Ch1.LastName",
+#         "ACC Effective Date",
+#         "Member_Information_Employee_Benefit_Class",
+#         "Employee_Address_1",
+#         "Member_Information_Last_Name",
+#         "blank_header_1",
+#         "blank_header_20",
+#     ]
+#     results = predict(
+#         model_name="model_ffm",
+#         artifacts=["data/bert_wp_tok_updated_v2.joblib"],
+#         model_path="data/FFM_new_prod_labels_v2.h5",
+#         inputs={"datasetId": "spr:dataset_id", "columns": columns},
+#     )
+#     print(f"{results=}")
