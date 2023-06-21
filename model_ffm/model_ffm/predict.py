@@ -15,7 +15,7 @@ def predict(**kwargs):
     import onnxruntime
     import joblib
 
-    ARTIFACT_VERSION = "3.0.0"
+    ARTIFACT_VERSION = "3.1.0"
     MAX_SEQ_LENGTH = 16  # Padding threshold
     # Regex patterns for post prediction logic
     dep_relation_pattern = r"^dependent_relationship_dependent.+(\d)"
@@ -23,6 +23,8 @@ def predict(**kwargs):
     child_pattern = r"^.+(\d)"
     emp_address_pattern = r"^employee_address(_\d)?"
     blank_pattern = r"^blank_header_\d+$"
+    hospital_pattern = f"(^hospital).+|(^hos).+|(^hosp).+"
+    PATTERN_HOSP = re.compile(hospital_pattern, flags=re.IGNORECASE)  # TODO: Remove on version 3.1.0
     PATTERN_BLANK = re.compile(blank_pattern)
     PATTERN_DEP = re.compile(dep_relation_pattern)
     PATTERN_DEP1 = re.compile(dep_pattern)
@@ -52,7 +54,7 @@ def predict(**kwargs):
 
               If the object is loaded using pickle or joblib, the loaded object is returned.
         """
-        # resource_loc = f"data/{keyword}{ARTIFACT_VERSION}.{method}" # For local debug
+        # resource_loc = f"data/{keyword}{ARTIFACT_VERSION}.{method}"  # For local debug
         resource_loc = pkg_resources.resource_stream(
             "model_ffm", f"data/{keyword}{ARTIFACT_VERSION}.{method}"
         )
@@ -356,6 +358,10 @@ def predict(**kwargs):
             numpy.array: A one dimensional numpy array containing modified prediction instance
         """
         match_obj_emp_add = PATTERN_EMP_ADD.match(row[0].lower())
+        match_obj_hi = PATTERN_HOSP.match((row[0].lower()))
+        if PATTERN_HOSP.match(row[0].lower()):
+            if row[2] == "CoverageTier" and row[3] == "UNK":
+                row[1] = "HI"
 
         if PATTERN_DEP.match(row[0].lower()):
             if (
