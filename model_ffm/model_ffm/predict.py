@@ -321,28 +321,28 @@ def predict(**kwargs):
             np.isin(prediction_arr[:, 1], ["CHLIFE", "CHADD"])
         )
 
-        prediction_arr[mask_1][:, 1] = "UNK"
-        prediction_arr[mask_8][:, 2] = "AddressLine1"
-        prediction_arr[mask_9][:, 2] = "HireDate"
-        prediction_arr[mask_10][:, 2] = "BenefitClass"
-        prediction_arr[mask_13][:, 2] = "Zip"
-        prediction_arr[mask_14][:, 2] = "Grandfathered Amount"
-        prediction_arr[mask_17][:, 1] = "LIFEVOL"
-        prediction_arr[mask_18][:, 1] = "ADDVOL"
-        prediction_arr[mask_20][:, 1] = "LIFESUP"
-        prediction_arr[mask_21][:, 3] = "Spouse"
-        prediction_arr[mask_23][:, 3] = "UNK"
-        prediction_arr[mask_24][:, 1] = "LIFE"
-        prediction_arr[mask_25][:, 1] = "LIFEVOL"
-        prediction_arr[mask_27][:, 2] = "Applied For Amount"
-        prediction_arr[mask_28][:, 3] = "UNK"
-        prediction_arr[mask_29][:, 1] = "LIFEVOL"
-        prediction_arr[mask_31][:, 1] = "ADDVOL"
-        prediction_arr[mask_32][:, 2] = "State"
-        prediction_arr[mask_34][:, 3] = "UNK"
-        prediction_arr[mask][:, 3] = "Primary"
-        prediction_arr[mask_f1][:, 3] = "Primary"
-        prediction_arr[mask_35][:, 1] = "UNK"
+        prediction_arr[np.ix_(mask_1, [1])] = "UNK"
+        prediction_arr[np.ix_(mask_8, [2])] = "AddressLine1"
+        prediction_arr[np.ix_(mask_9, [2])] = "HireDate"
+        prediction_arr[np.ix_(mask_10, [2])] = "BenefitClass"
+        prediction_arr[np.ix_(mask_13, [2])] = "Zip"
+        prediction_arr[np.ix_(mask_14, [2])] = "Grandfathered Amount"
+        prediction_arr[np.ix_(mask_17, [1])] = "LIFEVOL"
+        prediction_arr[np.ix_(mask_18, [1])] = "ADDVOL"
+        prediction_arr[np.ix_(mask_20, [1])] = "LIFESUP"
+        prediction_arr[np.ix_(mask_21, [3])] = "Spouse"
+        prediction_arr[np.ix_(mask_23, [3])] = "UNK"
+        prediction_arr[np.ix_(mask_24, [1])] = "LIFE"
+        prediction_arr[np.ix_(mask_25, [1])] = "LIFEVOL"
+        prediction_arr[np.ix_(mask_27, [2])] = "Applied For Amount"
+        prediction_arr[np.ix_(mask_28, [3])] = "UNK"
+        prediction_arr[np.ix_(mask_29, [1])] = "LIFEVOL"
+        prediction_arr[np.ix_(mask_31, [1])] = "ADDVOL"
+        prediction_arr[np.ix_(mask_32, [2])] = "State"
+        prediction_arr[np.ix_(mask_34, [3])] = "UNK"
+        prediction_arr[np.ix_(mask, [3])] = "Primary"
+        prediction_arr[np.ix_(mask_f1, [3])] = "Primary"
+        prediction_arr[np.ix_(mask_35, [1])] = "UNK"
 
         return prediction_arr
 
@@ -363,10 +363,10 @@ def predict(**kwargs):
                 and row[2] == "Relationship"
                 and row[1] == "UNK"
             ):
-                row[3] = "Child-" + PATTERN_DEP.match(row[1].lower())[1]
+                row[3] = "Child-" + PATTERN_DEP.match(row[0].lower())[1]
 
         if row[3] == "Child" and row[1] == "UNK":
-            if match_obj := PATTERN_CHILD.match(row[1].lower()):
+            if match_obj := PATTERN_CHILD.match(row[0].lower()):
                 row[3] = "Child-" + match_obj[1]
 
         if match_obj_emp_add:
