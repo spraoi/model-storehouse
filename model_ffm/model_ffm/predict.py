@@ -59,7 +59,7 @@ def predict(**kwargs):
             "model_ffm", f"data/{keyword}{ARTIFACT_VERSION}.{method}"
         )
         if method == "onnx":
-            loaded_obj = onnxruntime.InferenceSession(resource_loc)
+            loaded_obj = onnxruntime.InferenceSession(resource_loc.read())
             input_dim = loaded_obj.get_inputs()[0].name
             output_dim = [
                 loaded_obj.get_outputs()[dimension].name
