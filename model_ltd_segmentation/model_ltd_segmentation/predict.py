@@ -196,14 +196,26 @@ def predict(**kwargs):
             torch.tensor: tensor containing padded word vectors
 
         """
+
         tensor_list = []
         for seq_ in data[field]:
             tensor_list.append(
                 torch.tensor(
                     [vocab[token] for token in tokenizer(seq_)], dtype=torch.long
-                )[:maxlen]
+                )
             )
-        return pad_sequence(tensor_list, padding_value=vocab["<pad>"], batch_first=True)
+
+        padded_tensors = [
+            F.pad(
+                input=source,
+                pad=(0, maxlen - source.shape[0]),
+                mode="constant",
+                value=vocab["<pad>"],
+            )
+            for source in tensor_list
+        ]
+        padded_2d_tensor = torch.stack(padded_tensors)
+        return padded_2d_tensor
 
     def match_template(df, df_template):
         columns_missing = list(set(df_template.columns) - set(df.columns))
