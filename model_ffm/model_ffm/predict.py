@@ -15,7 +15,7 @@ def predict(**kwargs):
     import onnxruntime
     import joblib
 
-    ARTIFACT_VERSION = "3.3.0"
+    ARTIFACT_VERSION = "3.3.1"
     MAX_SEQ_LENGTH = 16  # Padding threshold
     # Regex patterns for post prediction logic
     dep_relation_pattern = r"^dependent_relationship_dependent.+(\d)"
@@ -458,6 +458,10 @@ def predict(**kwargs):
 
 # if __name__ == "__main__":
 #     columns = [
+#         "Basic_Life_benefit_amount",
+#         "Basic_STD_benefit_amount",
+#         "ProductPlanNameOrCode",
+#         "Supplemental/Voluntary_Employee_Life_Plan_Code",
 #         "Supplemental/Voluntary_Child_AD&D_In_Force_Amount",
 #         "Employee_Address_(2",
 #         "Supplemental/Voluntary_Employee_AD&D_Date_of_Termination",

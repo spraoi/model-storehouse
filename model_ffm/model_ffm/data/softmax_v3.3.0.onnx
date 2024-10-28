@@ -1,12 +1,0 @@
-pytorch1.10:è
-0
-inputoutput	Softmax_0"Softmax*
-axis†torch-jit-exportZ#
-input
-
-batch
-	batch_xb$
-output
-
-batch
-	batch_xB
